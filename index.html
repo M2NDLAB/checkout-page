@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M2NDLAB — Payment Result</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================================
+           CSS VARIABLES — Fabrick brand palette + semantic tokens
+           ========================================================= */
+        :root {
+            /* Brand */
+            --fabrick-navy:    #002E6D;
+            --fabrick-blue:    #0066CC;
+            --fabrick-sky:     #E8F0FE;
+            --fabrick-dark:    #0A1628;
+
+            /* Semantic — status */
+            --color-approved:       #0A8754;
+            --color-approved-bg:    #E6F4ED;
+            --color-approved-ring:  #B7E4CD;
+            --color-declined:       #C4320A;
+            --color-declined-bg:    #FEF0EC;
+            --color-declined-ring:  #F9C9B8;
+            --color-waiting:        #B45309;
+            --color-waiting-bg:     #FEF7EC;
+            --color-waiting-ring:   #FDE7C2;
+
+            /* Surfaces */
+            --surface-0:  #F4F6F9;
+            --surface-1:  #FFFFFF;
+            --surface-2:  #F8F9FB;
+            --border:     #E2E6ED;
+            --border-light:#EEF0F4;
+
+            /* Text */
+            --text-primary:   #0A1628;
+            --text-secondary: #4A5568;
+            --text-tertiary:  #8896A6;
+
+            /* Misc */
+            --radius-sm:  8px;
+            --radius-md:  12px;
+            --radius-lg:  16px;
+            --radius-xl:  20px;
+            --shadow-card: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.06);
+            --shadow-elevated: 0 4px 6px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.08);
+        }
+
+        /* =========================================================
+           RESET & BASE
+           ========================================================= */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 15px;
+            color: var(--text-primary);
+            background: var(--surface-0);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 16px 60px;
+        }
+
+        /* =========================================================
+           LAYOUT
+           ========================================================= */
+        .container {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        /* ---- Header / Logo ---- */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--fabrick-navy);
+            letter-spacing: -0.5px;
+        }
+
+        /* ---- Main card ---- */
+        .card {
+            background: var(--surface-1);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+
+        /* ---- Status banner (top of card) ---- */
+        .status-banner {
+            padding: 32px 28px 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            background: radial-gradient(circle at 30% 20%, currentColor 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Status-specific banner themes */
+        .status-banner.approved {
+            background: var(--color-approved-bg);
+            color: var(--color-approved);
+        }
+        .status-banner.declined {
+            background: var(--color-declined-bg);
+            color: var(--color-declined);
+        }
+        .status-banner.waiting {
+            background: var(--color-waiting-bg);
+            color: var(--color-waiting);
+        }
+        .status-banner.loading {
+            background: var(--fabrick-sky);
+            color: var(--fabrick-blue);
+        }
+        .status-banner.error {
+            background: var(--color-declined-bg);
+            color: var(--color-declined);
+        }
+
+        .status-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 28px;
+            position: relative;
+        }
+
+        .status-banner.approved .status-icon {
+            background: var(--color-approved);
+            color: white;
+            box-shadow: 0 0 0 6px var(--color-approved-ring);
+        }
+        .status-banner.declined .status-icon {
+            background: var(--color-declined);
+            color: white;
+            box-shadow: 0 0 0 6px var(--color-declined-ring);
+        }
+        .status-banner.waiting .status-icon {
+            background: var(--color-waiting);
+            color: white;
+            box-shadow: 0 0 0 6px var(--color-waiting-ring);
+        }
+        .status-banner.loading .status-icon {
+            background: var(--fabrick-blue);
+            color: white;
+            box-shadow: 0 0 0 6px #B8D4F0;
+        }
+        .status-banner.error .status-icon {
+            background: var(--color-declined);
+            color: white;
+            box-shadow: 0 0 0 6px var(--color-declined-ring);
+        }
+
+        .status-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .status-subtitle {
+            font-size: 13px;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* ---- Amount highlight ---- */
+        .amount-section {
+            padding: 24px 28px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .amount-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+        }
+
+        .amount-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--fabrick-navy);
+            letter-spacing: -1px;
+        }
+
+        .amount-value .currency {
+            font-size: 22px;
+            font-weight: 600;
+            vertical-align: super;
+            margin-right: 2px;
+            opacity: 0.7;
+        }
+
+        /* ---- Detail rows ---- */
+        .details {
+            padding: 8px 0;
+        }
+
+        .detail-group-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+            padding: 16px 28px 8px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px 28px;
+            gap: 16px;
+        }
+
+        .detail-row:hover {
+            background: var(--surface-2);
+        }
+
+        .detail-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: right;
+            word-break: break-all;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+        }
+
+        .detail-value.text-font {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+        }
+
+        .detail-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 4px 28px;
+        }
+
+        /* ---- Badge (payment method, 3DS, etc.) ---- */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .badge-blue {
+            background: var(--fabrick-sky);
+            color: var(--fabrick-blue);
+        }
+
+        .badge-green {
+            background: var(--color-approved-bg);
+            color: var(--color-approved);
+        }
+
+        .badge-orange {
+            background: var(--color-waiting-bg);
+            color: var(--color-waiting);
+        }
+
+        .badge-neutral {
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .badge-red {
+            background: var(--color-declined-bg);
+            color: var(--color-declined);
+        }
+
+        /* ---- Suspended warning banner ---- */
+        .suspended-warning {
+            margin: 0 20px 0;
+            padding: 14px 16px;
+            background: var(--color-waiting-bg);
+            border: 1px solid var(--color-waiting-ring);
+            border-radius: var(--radius-sm);
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .suspended-warning .warn-icon {
+            flex-shrink: 0;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .suspended-warning p {
+            font-size: 12.5px;
+            color: var(--color-waiting);
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* ---- Events timeline ---- */
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 28px;
+        }
+
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--fabrick-blue);
+            flex-shrink: 0;
+        }
+
+        .event-info {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-type {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .event-date {
+            font-size: 11.5px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .event-amount {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ---- Footer ---- */
+        .card-footer {
+            padding: 20px 28px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .card-footer p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            line-height: 1.5;
+        }
+
+        .card-footer .tx-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* ---- Loader animation ---- */
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Waiting pulse */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse { animation: pulse 2s ease-in-out infinite; }
+
+        /* Entrance animation */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeUp 0.4s ease-out;
+        }
+
+        /* ---- Collapsible sections ---- */
+        .collapsible-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 28px 8px;
+            user-select: none;
+        }
+
+        .collapsible-header .chevron {
+            transition: transform 0.2s ease;
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+
+        .collapsible-header.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-content.open {
+            max-height: 600px;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 480px) {
+            body { padding: 24px 12px 40px; }
+            .status-banner { padding: 28px 20px 24px; }
+            .amount-section { padding: 20px; }
+            .detail-row { padding: 10px 20px; }
+            .detail-group-title { padding: 16px 20px 8px; }
+            .detail-divider { margin: 4px 20px; }
+            .event-item { padding: 8px 20px; }
+            .card-footer { padding: 16px 20px; }
+            .collapsible-header { padding: 16px 20px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+         HEADER — Brand logo
+         ============================================ -->
+    <div class="container">
+        <div class="header">
+            <div class="logo">M2NDLAB</div>
+        </div>
+
+        <!-- ============================================
+             MAIN CARD — Populated dynamically via JS
+             ============================================ -->
+        <div class="card" id="paymentCard">
+            <!-- Initial loading state -->
+            <div class="status-banner loading" id="statusBanner">
+                <div class="status-icon"><div class="spinner"></div></div>
+                <div class="status-title">Loading payment details…</div>
+                <div class="status-subtitle">Retrieving transaction information</div>
+            </div>
+            <div id="cardBody"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * =====================================================================
+         * PAYMENT RESULT PAGE
+         * =====================================================================
+         *
+         * Flusso:
+         *   1. Parse dei parametri URL (a, Status, paymentID, paymentToken)
+         *   2. Chiamata GET al servizio /payment/detail/{paymentID}
+         *      con PaymentToken come header di autenticazione (sandbox only)
+         *   3. Rendering del risultato in base a transactionResult:
+         *      APPROVED | DECLINED | PENDING | WAITING | UNSUBMITTED
+         *
+         * Mapping Status URL → transactionResult (da doc ufficiale):
+         *   OK → APPROVED
+         *   KO → DECLINED
+         *   XX → PENDING | WAITING | UNSUBMITTED (stato sospeso, esito asincrono)
+         *
+         * ATTENZIONE: con Status=XX Axerve redirige alla URL di esito POSITIVO,
+         * ma lo stato NON è definitivo. L'esito finale arriva via notifica S2S.
+         *
+         * Nota: la pagina è pensata per essere hostata su GitHub Pages come
+         * singolo file statico, riceve tutto il contesto dai query params.
+         * =====================================================================
+         */
+
+        // ==================================================================
+        // 1. CONFIGURAZIONE — Lettura parametri URL e selezione ambiente
+        // ==================================================================
+
+        const params = new URLSearchParams(window.location.search);
+
+        // Parametri obbligatori dalla redirect URL di Axerve/GestPay
+        const shopLogin   = params.get('a')             || '';
+        const urlStatus   = params.get('Status')        || '';
+        const paymentID   = params.get('paymentID')     || '';
+        const paymentToken= params.get('paymentToken')  || '';
+
+        /**
+         * Ambiente API: solo sandbox.
+         * Quando sarà necessario supportare anche la produzione,
+         * riattivare la logica di selezione basata sul prefisso ShopLogin.
+         */
+        const apiBase = 'https://sandbox.gestpay.net/api';
+
+        // ==================================================================
+        // 2. HELPER — Mappatura stato transazione → tema visivo
+        // ==================================================================
+
+        /**
+         * Mappa il transactionResult (dal payload detail) o lo Status URL
+         * (come fallback) in una configurazione visiva.
+         *
+         * Valori transactionResult (da doc ufficiale Axerve):
+         *   - APPROVED:    pagamento approvato (Status URL = OK)
+         *   - DECLINED:    pagamento rifiutato (Status URL = KO)
+         *   - PENDING:     pagamento in attesa di conferma (Status URL = XX)
+         *   - WAITING:     pagamento in corso (Status URL = XX)
+         *   - UNSUBMITTED: pagamento non ancora iniziato (Status URL = XX)
+         *
+         * Valori Status URL:
+         *   - OK: esito positivo
+         *   - KO: esito negativo
+         *   - XX: stato sospeso — redirect alla URL positiva MA esito NON definitivo
+         */
+        function getStatusConfig(result) {
+            const r = (result || '').toUpperCase();
+
+            // --- Esito positivo ---
+            if (r === 'APPROVED' || r === 'OK') {
+                return {
+                    theme:    'approved',
+                    icon:     '✓',
+                    title:    'Payment Approved',
+                    subtitle: 'Your transaction has been successfully processed'
+                };
+            }
+
+            // --- Esito negativo ---
+            if (r === 'DECLINED' || r === 'KO') {
+                return {
+                    theme:    'declined',
+                    icon:     '✕',
+                    title:    'Payment Declined',
+                    subtitle: 'The transaction could not be completed'
+                };
+            }
+
+            // --- Stato sospeso (XX) ---
+            // PENDING: in attesa di conferma da parte del payment method (APM asincroni)
+            // WAITING: pagamento in corso, non ancora completato
+            // UNSUBMITTED: pagamento creato ma non ancora iniziato dal buyer
+            // XX: valore grezzo dallo Status URL prima del detail
+            if (['PENDING', 'WAITING', 'UNSUBMITTED', 'XX'].includes(r)) {
+                const subtitles = {
+                    'PENDING':     'Awaiting confirmation from the payment provider',
+                    'WAITING':     'The payment is still being processed',
+                    'UNSUBMITTED': 'The payment has not been submitted yet',
+                    'XX':          'The payment status is not yet final'
+                };
+                return {
+                    theme:    'waiting',
+                    icon:     '⏳',
+                    title:    'Payment Pending',
+                    subtitle: subtitles[r] || 'The transaction is awaiting confirmation',
+                    // Flag per mostrare il warning "non procedere"
+                    showSuspendedWarning: true
+                };
+            }
+
+            // --- Stato sconosciuto ---
+            return {
+                theme:    'declined',
+                icon:     '?',
+                title:    'Unknown Status',
+                subtitle: `Transaction result: ${result || 'N/A'}`
+            };
+        }
+
+        // ==================================================================
+        // 3. HELPER — Formattazione valori per la UI
+        // ==================================================================
+
+        /** Mappa codice valuta ISO-alpha a simbolo */
+        function currencySymbol(code) {
+            const map = { EUR: '€', USD: '$', GBP: '£', CHF: 'CHF' };
+            return map[(code || '').toUpperCase()] || code || '€';
+        }
+
+        /** Formattazione importo con separatore migliaia */
+        function formatAmount(amount) {
+            const n = parseFloat(amount);
+            if (isNaN(n)) return amount || '—';
+            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        /**
+         * Mappatura dei codici tipo evento Axerve a label leggibili.
+         * Fonte: documentazione Axerve/GestPay event types.
+         */
+        function eventTypeLabel(type) {
+            const labels = {
+                'AUT': 'Authorization',
+                'MOV': 'Settlement',
+                'CAN': 'Cancellation',
+                'STO': 'Refund',
+                'PRE': 'Pre-Authorization',
+                'PREAUT': 'Pre-Authorization'
+            };
+            return labels[(type || '').toUpperCase()] || type || '—';
+        }
+
+        /**
+         * Mappatura transactionState a label leggibile.
+         */
+        function stateLabel(state) {
+            const labels = {
+                'AUT': 'Authorized',
+                'MOV': 'Settled',
+                'CAN': 'Cancelled',
+                'STO': 'Refunded',
+                'PRE': 'Pre-Authorized',
+                'WAITAUT': 'Waiting Authorization'
+            };
+            return labels[(state || '').toUpperCase()] || state || '—';
+        }
+
+        /** 3DS authentication status description */
+        function threeDsStatus(status) {
+            const map = {
+                'Y': 'Authenticated',
+                'N': 'Not Authenticated',
+                'A': 'Attempted',
+                'U': 'Unavailable',
+                'R': 'Rejected',
+                'C': 'Challenge Required'
+            };
+            return map[status] || status || '—';
+        }
+
+        /** Mostra valore o dash se vuoto */
+        function val(v) {
+            return (v !== null && v !== undefined && v !== '') ? v : '—';
+        }
+
+        // ==================================================================
+        // 4. RENDERING — Costruzione del DOM dal payload
+        // ==================================================================
+
+        function renderCard(payload) {
+            const banner = document.getElementById('statusBanner');
+            const body   = document.getElementById('cardBody');
+
+            const config = getStatusConfig(payload.transactionResult);
+            const curr   = currencySymbol(payload.currency);
+
+            // -- Importo: preso dal primo evento, oppure non disponibile
+            const firstEventAmount = payload.events?.[0]?.event?.eventamount;
+
+            // ---- Banner stato ----
+            banner.className = `status-banner ${config.theme}`;
+            banner.innerHTML = `
+                <div class="status-icon">${config.icon}</div>
+                <div class="status-title">${config.title}</div>
+                <div class="status-subtitle">${config.subtitle}</div>
+            `;
+
+            // Classe pulse per waiting
+            if (config.theme === 'waiting') {
+                banner.querySelector('.status-icon').classList.add('pulse');
+            }
+
+            // ---- Body ----
+            let html = '';
+
+            // Warning per stato sospeso (XX) — da doc ufficiale:
+            // "Se ricevi lo stato XX, non procedere con la spedizione della merce
+            //  o l'erogazione del servizio. Attendi la notifica S2S."
+            if (config.showSuspendedWarning) {
+                html += `
+                    <div class="suspended-warning" style="margin-top:20px;">
+                        <span class="warn-icon">⚠</span>
+                        <p>
+                            <strong>Do not fulfill this order yet.</strong><br>
+                            The payment outcome is not final. A server-to-server (S2S) notification 
+                            will confirm the definitive result (OK or KO).
+                        </p>
+                    </div>
+                `; 
+            }
+
+            // Importo
+            if (firstEventAmount) {
+                html += `
+                    <div class="amount-section">
+                        <div class="amount-label">Total Amount</div>
+                        <div class="amount-value">
+                            <span class="currency">${curr}</span>${formatAmount(firstEventAmount)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ---- Order details ----
+            html += `<div class="details">`;
+            html += `<div class="detail-group-title">Order Details</div>`;
+            html += detailRow('Shop Transaction ID', payload.shopTransactionID, true);
+            if (payload.shopTransactionID_2) {
+                html += detailRow('Shop Transaction ID 2', payload.shopTransactionID_2, true);
+            }
+            html += detailRow('Payment ID', payload.paymentID);
+            html += detailRow('Bank Transaction ID', payload.bankTransactionID);
+            html += detailRow('Authorization Code', payload.authorizationCode);
+
+            html += `<div class="detail-divider"></div>`;
+
+            // ---- Payment info ----
+            html += `<div class="detail-group-title">Payment Information</div>`;
+            html += detailRow('Payment Method', badgeHtml(val(payload.paymentMethod), 'blue'), false, true);
+            if (payload.productType) {
+                html += detailRow('Product Type', val(payload.productType), false, false, true);
+            }
+            html += detailRow('Currency', val(payload.currency), false, false, true);
+            html += detailRow('Country', val(payload.country), false, false, true);
+
+            // Card details (da tokenDetails se presenti)
+            const cd = payload.tokenDetails?.CardDetails;
+            if (cd?.CardSuffix) {
+                html += detailRow('Card', `•••• •••• •••• ${cd.CardSuffix}`);
+                html += detailRow('Expiry', `${cd.CardExpiryMonth}/${cd.CardExpiryYear}`);
+                if (cd.CardHolderName) {
+                    html += detailRow('Cardholder', val(cd.CardHolderName), false, false, true);
+                }
+            }
+
+            html += detailRow('CVV Provided', payload.cvvPresent === 'TRUE'
+                ? badgeHtml('Yes', 'green') : badgeHtml('No', 'neutral'), false, true);
+
+            html += `<div class="detail-divider"></div>`;
+
+            // ---- Transaction state ----
+            html += `<div class="detail-group-title">Transaction State</div>`;
+            html += detailRow('Result', badgeHtml(val(payload.transactionResult),
+                payload.transactionResult === 'APPROVED' ? 'green' 
+                : payload.transactionResult === 'DECLINED' ? 'red' 
+                : 'orange'), false, true);
+            html += detailRow('State', val(stateLabel(payload.transactionState)), false, false, true);
+            html += detailRow('Error Code', val(payload.transactionErrorCode));
+            html += detailRow('Description', val(payload.transactionErrorDescription), false, false, true);
+
+            // ---- 3D Secure (collapsible) ----
+            const threeDS = payload.threeDS;
+            if (threeDS?.authenticationResult) {
+                const ar = threeDS.authenticationResult;
+                html += `<div class="detail-divider"></div>`;
+                html += `
+                    <div class="collapsible-header" onclick="toggleSection(this)">
+                        <span class="detail-group-title" style="padding:0">3D Secure</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                `;
+                html += detailRow('Authentication', badgeHtml(threeDsStatus(ar.authenticationStatus),
+                    ar.authenticationStatus === 'Y' ? 'green' : 'orange'), false, true);
+                html += detailRow('Level', val(ar.authenticationLevel), false, false, true);
+                html += detailRow('ECI', val(ar.ECI));
+                html += detailRow('3DS Version', val(ar.threeDsVersion));
+                html += detailRow('TD Level', val(payload.tdLevel), false, false, true);
+                html += `</div>`;
+            }
+
+            // ---- Events timeline (collapsible) ----
+            if (payload.events?.length) {
+                html += `<div class="detail-divider"></div>`;
+                html += `
+                    <div class="collapsible-header" onclick="toggleSection(this)">
+                        <span class="detail-group-title" style="padding:0">Events</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                `;
+                payload.events.forEach(ev => {
+                    const e = ev.event;
+                    html += `
+                        <div class="event-item">
+                            <div class="event-dot"></div>
+                            <div class="event-info">
+                                <div>
+                                    <div class="event-type">${eventTypeLabel(e.eventtype)}</div>
+                                    <div class="event-date">${val(e.eventdate)}</div>
+                                </div>
+                                <div class="event-amount">${curr} ${formatAmount(e.eventamount)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // ---- Automatic operation (se presente) ----
+            if (payload.automaticOperation?.type) {
+                const ao = payload.automaticOperation;
+                html += `<div class="detail-divider"></div>`;
+                html += `<div class="detail-group-title">Scheduled Operation</div>`;
+                html += detailRow('Type', eventTypeLabel(ao.type), false, false, true);
+                html += detailRow('Date', val(ao.date), false, false, true);
+                html += detailRow('Amount', `${curr} ${formatAmount(ao.amount)}`);
+            }
+
+            // ---- Buyer info (se presente) ----
+            if (payload.buyer?.name || payload.buyer?.email) {
+                html += `<div class="detail-divider"></div>`;
+                html += `<div class="detail-group-title">Buyer</div>`;
+                if (payload.buyer.name)  html += detailRow('Name', val(payload.buyer.name), false, false, true);
+                if (payload.buyer.email) html += detailRow('Email', val(payload.buyer.email));
+            }
+
+            html += `</div>`; // chiude .details
+
+            // ---- Footer ----
+            html += `
+                <div class="card-footer">
+                    <p>Processed by <strong>M2NDLAB</strong> via Axerve</p>
+                    <div class="tx-id">Payment ID: ${val(payload.paymentID)}</div>
+                    <div class="tx-id" style="color:var(--color-waiting);margin-top:4px;">⚠ SANDBOX ENVIRONMENT</div>
+                </div>
+            `;
+
+            body.innerHTML = html;
+        }
+
+        /**
+         * Genera l'HTML di una riga dettaglio key-value.
+         * @param {string}  label         - Etichetta a sinistra
+         * @param {string}  value         - Valore a destra (può contenere HTML per badge)
+         * @param {boolean} mono          - true per font monospace sul valore
+         * @param {boolean} rawValue      - true se il value contiene già HTML (badge)
+         * @param {boolean} textFont      - true per usare il font di testo (non mono)
+         */
+        function detailRow(label, value, mono = true, rawValue = false, textFont = false) {
+            const cls = textFont ? 'detail-value text-font' : (mono ? 'detail-value' : 'detail-value text-font');
+            if (rawValue) {
+                return `
+                    <div class="detail-row">
+                        <span class="detail-label">${label}</span>
+                        <span class="${cls}">${value}</span>
+                    </div>`;
+            }
+            return `
+                <div class="detail-row">
+                    <span class="detail-label">${label}</span>
+                    <span class="${cls}">${val(value)}</span>
+                </div>`;
+        }
+
+        /** Genera un badge HTML */
+        function badgeHtml(text, variant) {
+            return `<span class="badge badge-${variant}">${text}</span>`;
+        }
+
+        /** Toggle sezioni collapsible */
+        function toggleSection(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        // ==================================================================
+        // 5. STATO DI ERRORE — Fallback se la chiamata API fallisce
+        // ==================================================================
+
+        function renderError(message, detail) {
+            const banner = document.getElementById('statusBanner');
+            const body   = document.getElementById('cardBody');
+
+            // Se lo Status URL era OK/KO, usiamo quello come fallback minimo
+            const fallbackConfig = getStatusConfig(urlStatus);
+
+            banner.className = `status-banner error`;
+            banner.innerHTML = `
+                <div class="status-icon">!</div>
+                <div class="status-title">${message}</div>
+                <div class="status-subtitle">${detail || ''}</div>
+            `;
+
+            let html = '';
+
+            // Se lo Status URL è XX, mostra il warning sospensione anche in errore
+            if (urlStatus.toUpperCase() === 'XX') {
+                html += `
+                    <div class="suspended-warning" style="margin:20px 20px 0;">
+                        <span class="warn-icon">⚠</span>
+                        <p>
+                            <strong>Do not fulfill this order yet.</strong><br>
+                            URL Status is XX (suspended). The final outcome will arrive via S2S notification.
+                        </p>
+                    </div>
+                `;
+            }
+
+            html += `<div class="details">`;
+            html += `<div class="detail-group-title">Available Information</div>`;
+            html += detailRow('Shop Login', shopLogin);
+            html += detailRow('URL Status', urlStatus, false, false, true);
+            html += detailRow('Payment ID', paymentID);
+            html += detailRow('Environment', 'Sandbox', false, false, true);
+            html += `</div>`;
+            html += `
+                <div class="card-footer">
+                    <p>Could not retrieve full transaction details.<br>Please contact support if needed.</p>
+                    <div class="tx-id" style="color:var(--color-waiting);margin-top:4px;">⚠ SANDBOX ENVIRONMENT</div>
+                </div>
+            `;
+
+            body.innerHTML = html;
+        }
+
+        /**
+         * Stato specifico per quando mancano i parametri URL obbligatori.
+         * Può succedere se qualcuno accede alla pagina direttamente.
+         */
+        function renderMissingParams() {
+            const banner = document.getElementById('statusBanner');
+            const body   = document.getElementById('cardBody');
+
+            banner.className = `status-banner error`;
+            banner.innerHTML = `
+                <div class="status-icon">!</div>
+                <div class="status-title">Missing Parameters</div>
+                <div class="status-subtitle">Required URL parameters not found</div>
+            `;
+
+            body.innerHTML = `
+                <div class="details" style="padding:20px 28px;">
+                    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+                        This page requires the following URL parameters to display payment results:
+                        <code style="display:block;margin-top:12px;padding:12px;background:var(--surface-2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all;">
+                            ?a=SHOPLOGIN&Status=OK&paymentID=123&paymentToken=abc-def
+                        </code>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <p>You were probably redirected here by mistake.</p>
+                </div>
+            `;
+        }
+
+        // ==================================================================
+        // 6. FETCH — Chiamata API e orchestrazione
+        // ==================================================================
+
+        /**
+         * Chiamata al servizio Axerve /payment/detail/{paymentID}.
+         *
+         * - Il PaymentToken viene usato come header di autenticazione:
+         *   è il token generato durante il flusso di pagamento e ancora
+         *   valido nel momento della redirect.
+         * - Il Cookie ASP.NET_SessionId NON viene incluso: non è necessario
+         *   per l'autenticazione via PaymentToken, ed è specifico della
+         *   sessione Postman/browser di test.
+         */
+        async function fetchPaymentDetail() {
+
+            // Validazione parametri minimi
+            if (!paymentID || !paymentToken) {
+                renderMissingParams();
+                return;
+            }
+
+            const url = `${apiBase}/v1/payment/detail/${paymentID}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'PaymentToken': paymentToken
+                    }
+                });
+
+                if (!response.ok) {
+                    renderError(
+                        'API Error',
+                        `HTTP ${response.status} — ${response.statusText}`
+                    );
+                    return;
+                }
+
+                const data = await response.json();
+
+                // L'API Axerve restituisce error.code "0" per successo,
+                // qualsiasi altro codice indica un errore applicativo
+                if (data.error && data.error.code !== '0') {
+                    renderError(
+                        'Transaction Error',
+                        `[${data.error.code}] ${data.error.description}`
+                    );
+                    return;
+                }
+
+                if (!data.payload) {
+                    renderError('Unexpected Response', 'No payload in API response');
+                    return;
+                }
+
+                renderCard(data.payload);
+
+            } catch (err) {
+                // Errori di rete (CORS, DNS, timeout, ecc.)
+                renderError(
+                    'Connection Error',
+                    `Unable to reach the payment gateway. ${err.message || ''}`
+                );
+            }
+        }
+
+        // ==================================================================
+        // 7. BOOT — Avvio al caricamento della pagina
+        // ==================================================================
+        fetchPaymentDetail();
+    </script>
+</body>
+</html>
