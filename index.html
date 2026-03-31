@@ -456,11 +456,36 @@
          * =====================================================================
          */
 
-        const params       = new URLSearchParams(window.location.search);
-        const shopLogin    = params.get('a')            || '';
-        const urlStatus    = params.get('Status')       || '';
-        const paymentID    = params.get('paymentID')    || '';
-        const paymentToken = params.get('paymentToken') || '';
+        const params = new URLSearchParams(window.location.search);
+
+        /**
+         * Lettura case-insensitive dei query params.
+         *
+         * Perché serve: URLSearchParams.get() è case-sensitive, ma le URL
+         * di redirect Axerve arrivano con casing inconsistente tra ambienti
+         * e configurazioni. Esempi reali osservati:
+         *   - Status vs status
+         *   - paymentID vs paymentId vs paymentid
+         *   - paymentToken vs paymenttoken
+         *
+         * Questa funzione normalizza tutto a lowercase per il confronto.
+         */
+        function getParam(name) {
+            // Prima prova esatta (fast path)
+            const exact = params.get(name);
+            if (exact !== null) return exact;
+            // Fallback: cerca case-insensitive
+            const lower = name.toLowerCase();
+            for (const [key, value] of params.entries()) {
+                if (key.toLowerCase() === lower) return value;
+            }
+            return '';
+        }
+
+        const shopLogin    = getParam('a');
+        const urlStatus    = getParam('Status');
+        const paymentID    = getParam('paymentID');
+        const paymentToken = getParam('paymentToken');
 
         const apiBase = 'https://sandbox.gestpay.net/api';
 
