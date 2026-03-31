@@ -7,17 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /* =========================================================
-           CSS VARIABLES — Fabrick brand palette + semantic tokens
-           ========================================================= */
         :root {
-            /* Brand */
-            --fabrick-navy:    #002E6D;
-            --fabrick-blue:    #0066CC;
-            --fabrick-sky:     #E8F0FE;
-            --fabrick-dark:    #0A1628;
+            --brand-navy:    #002E6D;
+            --brand-blue:    #0066CC;
+            --brand-sky:     #E8F0FE;
 
-            /* Semantic — status */
             --color-approved:       #0A8754;
             --color-approved-bg:    #E6F4ED;
             --color-approved-ring:  #B7E4CD;
@@ -28,35 +22,27 @@
             --color-waiting-bg:     #FEF7EC;
             --color-waiting-ring:   #FDE7C2;
 
-            /* Surfaces */
             --surface-0:  #F4F6F9;
             --surface-1:  #FFFFFF;
             --surface-2:  #F8F9FB;
             --border:     #E2E6ED;
             --border-light:#EEF0F4;
 
-            /* Text */
             --text-primary:   #0A1628;
             --text-secondary: #4A5568;
             --text-tertiary:  #8896A6;
 
-            /* Misc */
             --radius-sm:  8px;
             --radius-md:  12px;
-            --radius-lg:  16px;
             --radius-xl:  20px;
             --shadow-card: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.06);
-            --shadow-elevated: 0 4px 6px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.08);
         }
 
-        /* =========================================================
-           RESET & BASE
-           ========================================================= */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         html {
             font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 15px;
+            font-size: 14px;
             color: var(--text-primary);
             background: var(--surface-0);
             -webkit-font-smoothing: antialiased;
@@ -67,47 +53,82 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 16px 60px;
+            padding: 24px 16px 40px;
         }
+
+        .container { width: 100%; max-width: 780px; }
 
         /* =========================================================
-           LAYOUT
+           FLIP CARD
            ========================================================= */
-        .container {
-            width: 100%;
-            max-width: 520px;
-        }
+        .card-wrapper { perspective: 1200px; position: relative; }
 
-        /* ---- Header / Logo ---- */
-        .header {
-            text-align: center;
-            margin-bottom: 32px;
+        .card-flipper {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            position: relative;
         }
+        .card-flipper.flipped { transform: rotateY(180deg); }
 
-        .logo {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--fabrick-navy);
-            letter-spacing: -0.5px;
-        }
-
-        /* ---- Main card ---- */
-        .card {
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             background: var(--surface-1);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-card);
-            overflow: hidden;
             border: 1px solid var(--border-light);
+            overflow: hidden;
         }
 
-        /* ---- Status banner (top of card) ---- */
+        .card-back {
+            position: absolute;
+            inset: 0;
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---- Action buttons (corners of status banner) ---- */
+        .card-actions {
+            position: absolute;
+            top: 12px; left: 12px; right: 12px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .card-btn {
+            pointer-events: auto;
+            width: 30px; height: 30px;
+            border-radius: 7px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: rgba(255,255,255,0.25);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+        .card-btn:hover {
+            background: rgba(255,255,255,0.92);
+            color: var(--brand-navy);
+            border-color: var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card-btn svg { width: 14px; height: 14px; }
+        .card-btn.spinning svg { animation: spin 0.8s linear infinite; }
+
+        /* ---- Status banner ---- */
         .status-banner {
-            padding: 32px 28px 28px;
+            padding: 22px 28px 18px;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-
         .status-banner::before {
             content: '';
             position: absolute;
@@ -117,945 +138,528 @@
             pointer-events: none;
         }
 
-        /* Status-specific banner themes */
-        .status-banner.approved {
-            background: var(--color-approved-bg);
-            color: var(--color-approved);
-        }
-        .status-banner.declined {
-            background: var(--color-declined-bg);
-            color: var(--color-declined);
-        }
-        .status-banner.waiting {
-            background: var(--color-waiting-bg);
-            color: var(--color-waiting);
-        }
-        .status-banner.loading {
-            background: var(--fabrick-sky);
-            color: var(--fabrick-blue);
-        }
-        .status-banner.error {
-            background: var(--color-declined-bg);
-            color: var(--color-declined);
-        }
+        .status-banner.approved { background: var(--color-approved-bg); color: var(--color-approved); }
+        .status-banner.declined { background: var(--color-declined-bg); color: var(--color-declined); }
+        .status-banner.waiting  { background: var(--color-waiting-bg);  color: var(--color-waiting); }
+        .status-banner.loading  { background: var(--brand-sky);         color: var(--brand-blue); }
+        .status-banner.error    { background: var(--color-declined-bg); color: var(--color-declined); }
 
         .status-icon {
-            width: 64px;
-            height: 64px;
+            width: 48px; height: 48px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
-            font-size: 28px;
-            position: relative;
-        }
-
-        .status-banner.approved .status-icon {
-            background: var(--color-approved);
-            color: white;
-            box-shadow: 0 0 0 6px var(--color-approved-ring);
-        }
-        .status-banner.declined .status-icon {
-            background: var(--color-declined);
-            color: white;
-            box-shadow: 0 0 0 6px var(--color-declined-ring);
-        }
-        .status-banner.waiting .status-icon {
-            background: var(--color-waiting);
-            color: white;
-            box-shadow: 0 0 0 6px var(--color-waiting-ring);
-        }
-        .status-banner.loading .status-icon {
-            background: var(--fabrick-blue);
-            color: white;
-            box-shadow: 0 0 0 6px #B8D4F0;
-        }
-        .status-banner.error .status-icon {
-            background: var(--color-declined);
-            color: white;
-            box-shadow: 0 0 0 6px var(--color-declined-ring);
-        }
-
-        .status-title {
+            margin-bottom: 8px;
             font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 4px;
         }
 
-        .status-subtitle {
-            font-size: 13px;
-            opacity: 0.8;
-            font-weight: 500;
-        }
+        .status-banner.approved .status-icon { background: var(--color-approved); color: white; box-shadow: 0 0 0 5px var(--color-approved-ring); }
+        .status-banner.declined .status-icon { background: var(--color-declined); color: white; box-shadow: 0 0 0 5px var(--color-declined-ring); }
+        .status-banner.waiting  .status-icon { background: var(--color-waiting);  color: white; box-shadow: 0 0 0 5px var(--color-waiting-ring); }
+        .status-banner.loading  .status-icon { background: var(--brand-blue);     color: white; box-shadow: 0 0 0 5px #B8D4F0; }
+        .status-banner.error    .status-icon { background: var(--color-declined); color: white; box-shadow: 0 0 0 5px var(--color-declined-ring); }
 
-        /* ---- Amount highlight ---- */
-        .amount-section {
-            padding: 24px 28px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-        }
+        .status-title { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+        .status-subtitle { font-size: 12px; opacity: 0.8; font-weight: 500; }
 
-        .amount-label {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-tertiary);
-            margin-bottom: 6px;
-        }
+        /* ---- Amount ---- */
+        .amount-section { padding: 14px 28px; text-align: center; border-bottom: 1px solid var(--border); }
+        .amount-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 2px; }
+        .amount-value { font-size: 28px; font-weight: 700; color: var(--brand-navy); letter-spacing: -1px; }
+        .amount-value .currency { font-size: 16px; font-weight: 600; vertical-align: super; margin-right: 2px; opacity: 0.7; }
 
-        .amount-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--fabrick-navy);
-            letter-spacing: -1px;
-        }
+        /* ---- Two-column detail grid ---- */
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 0; }
 
-        .amount-value .currency {
-            font-size: 22px;
-            font-weight: 600;
-            vertical-align: super;
-            margin-right: 2px;
-            opacity: 0.7;
-        }
-
-        /* ---- Detail rows ---- */
-        .details {
-            padding: 8px 0;
-        }
+        .detail-section { padding: 4px 0; }
+        .detail-section.full-width { grid-column: 1 / -1; }
 
         .detail-group-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-tertiary);
-            padding: 16px 28px 8px;
+            font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-tertiary); padding: 10px 18px 4px;
         }
 
         .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 10px 28px;
-            gap: 16px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 4px 18px; gap: 8px;
         }
+        .detail-row:hover { background: var(--surface-2); }
 
-        .detail-row:hover {
-            background: var(--surface-2);
-        }
+        .detail-label { font-size: 11.5px; color: var(--text-secondary); flex-shrink: 0; font-weight: 500; }
+        .detail-value { font-size: 11px; font-weight: 600; color: var(--text-primary); text-align: right; word-break: break-all; font-family: 'JetBrains Mono', monospace; }
+        .detail-value.text-font { font-family: 'DM Sans', sans-serif; font-size: 11.5px; }
 
-        .detail-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            flex-shrink: 0;
-            font-weight: 500;
-        }
+        .detail-divider { grid-column: 1 / -1; height: 1px; background: var(--border-light); margin: 2px 18px; }
 
-        .detail-value {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-align: right;
-            word-break: break-all;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12.5px;
-        }
+        /* ---- Badges ---- */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; font-weight: 600; font-family: 'DM Sans', sans-serif; }
+        .badge-blue { background: var(--brand-sky); color: var(--brand-blue); }
+        .badge-green { background: var(--color-approved-bg); color: var(--color-approved); }
+        .badge-orange { background: var(--color-waiting-bg); color: var(--color-waiting); }
+        .badge-red { background: var(--color-declined-bg); color: var(--color-declined); }
+        .badge-neutral { background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--border); }
 
-        .detail-value.text-font {
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px;
-        }
+        /* ---- Warning ---- */
+        .suspended-warning { margin: 0 14px; padding: 10px 12px; background: var(--color-waiting-bg); border: 1px solid var(--color-waiting-ring); border-radius: var(--radius-sm); display: flex; gap: 8px; align-items: flex-start; }
+        .suspended-warning .warn-icon { flex-shrink: 0; font-size: 13px; line-height: 1.4; }
+        .suspended-warning p { font-size: 11px; color: var(--color-waiting); font-weight: 500; line-height: 1.5; }
 
-        .detail-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: 4px 28px;
-        }
+        /* ---- Events ---- */
+        .event-item { display: flex; align-items: center; gap: 8px; padding: 5px 18px; }
+        .event-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-blue); flex-shrink: 0; }
+        .event-info { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+        .event-type { font-size: 11px; font-weight: 600; }
+        .event-date { font-size: 10px; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace; }
+        .event-amount { font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
 
-        /* ---- Badge (payment method, 3DS, etc.) ---- */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            font-family: 'DM Sans', sans-serif;
-        }
+        /* ---- Collapsible ---- */
+        .collapsible-header { cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 10px 18px 4px; user-select: none; }
+        .collapsible-header .chevron { transition: transform 0.2s ease; color: var(--text-tertiary); font-size: 10px; }
+        .collapsible-header.open .chevron { transform: rotate(180deg); }
+        .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .collapsible-content.open { max-height: 800px; }
 
-        .badge-blue {
-            background: var(--fabrick-sky);
-            color: var(--fabrick-blue);
-        }
+        /* ---- Card footer ---- */
+        .card-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .card-footer p { font-size: 10.5px; color: var(--text-tertiary); line-height: 1.4; }
+        .card-footer .tx-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-tertiary); }
 
-        .badge-green {
-            background: var(--color-approved-bg);
-            color: var(--color-approved);
-        }
+        /* ---- Page footer ---- */
+        .page-footer { margin-top: 16px; display: flex; align-items: center; gap: 8px; align-self: flex-start; }
+        .page-footer .brand { font-size: 12px; font-weight: 700; color: var(--brand-navy); letter-spacing: -0.3px; opacity: 0.4; }
+        .page-footer .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-tertiary); opacity: 0.4; }
+        .page-footer a { display: flex; align-items: center; color: var(--text-tertiary); opacity: 0.4; transition: opacity 0.2s; text-decoration: none; }
+        .page-footer a:hover { opacity: 1; }
+        .page-footer a svg { width: 15px; height: 15px; }
 
-        .badge-orange {
-            background: var(--color-waiting-bg);
-            color: var(--color-waiting);
-        }
+        /* ---- JSON back ---- */
+        .json-view-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface-2); }
+        .json-view-header h3 { font-size: 12px; font-weight: 700; }
+        .json-view-body { flex: 1; overflow: auto; padding: 14px 18px; background: #1a1e2e; }
+        .json-view-body pre { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.6; color: #c8d3e0; white-space: pre-wrap; word-break: break-all; }
+        .json-key { color: #7dd3fc; }
+        .json-str { color: #86efac; }
+        .json-num { color: #fbbf24; }
+        .json-bool { color: #c084fc; }
+        .json-null { color: #9ca3af; font-style: italic; }
 
-        .badge-neutral {
-            background: var(--surface-2);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
+        .btn-close-json {
+            padding: 3px 10px; border-radius: 5px; border: 1px solid var(--border);
+            background: var(--surface-1); font-size: 10.5px; font-weight: 600;
+            color: var(--text-secondary); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
         }
+        .btn-close-json:hover { background: var(--brand-navy); color: white; border-color: var(--brand-navy); }
 
-        .badge-red {
-            background: var(--color-declined-bg);
-            color: var(--color-declined);
-        }
-
-        /* ---- Suspended warning banner ---- */
-        .suspended-warning {
-            margin: 0 20px 0;
-            padding: 14px 16px;
-            background: var(--color-waiting-bg);
-            border: 1px solid var(--color-waiting-ring);
-            border-radius: var(--radius-sm);
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-        }
-
-        .suspended-warning .warn-icon {
-            flex-shrink: 0;
-            font-size: 16px;
-            line-height: 1.4;
-        }
-
-        .suspended-warning p {
-            font-size: 12.5px;
-            color: var(--color-waiting);
-            font-weight: 500;
-            line-height: 1.5;
-        }
-
-        /* ---- Events timeline ---- */
-        .event-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 28px;
-        }
-
-        .event-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--fabrick-blue);
-            flex-shrink: 0;
-        }
-
-        .event-info {
-            flex: 1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .event-type {
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .event-date {
-            font-size: 11.5px;
-            color: var(--text-tertiary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .event-amount {
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* ---- Footer ---- */
-        .card-footer {
-            padding: 20px 28px;
-            border-top: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .card-footer p {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            line-height: 1.5;
-        }
-
-        .card-footer .tx-id {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-tertiary);
-            margin-top: 4px;
-        }
-
-        /* ---- Loader animation ---- */
-        .spinner {
-            width: 28px;
-            height: 28px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Waiting pulse */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        /* ---- Animations ---- */
+        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .pulse { animation: pulse 2s ease-in-out infinite; }
-
-        /* Entrance animation */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .card {
-            animation: fadeUp 0.4s ease-out;
-        }
-
-        /* ---- Collapsible sections ---- */
-        .collapsible-header {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 28px 8px;
-            user-select: none;
-        }
-
-        .collapsible-header .chevron {
-            transition: transform 0.2s ease;
-            color: var(--text-tertiary);
-            font-size: 12px;
-        }
-
-        .collapsible-header.open .chevron {
-            transform: rotate(180deg);
-        }
-
-        .collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .collapsible-content.open {
-            max-height: 600px;
-        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .card-front { animation: fadeUp 0.4s ease-out; }
 
         /* ---- Responsive ---- */
-        @media (max-width: 480px) {
-            body { padding: 24px 12px 40px; }
-            .status-banner { padding: 28px 20px 24px; }
-            .amount-section { padding: 20px; }
-            .detail-row { padding: 10px 20px; }
-            .detail-group-title { padding: 16px 20px 8px; }
-            .detail-divider { margin: 4px 20px; }
-            .event-item { padding: 8px 20px; }
-            .card-footer { padding: 16px 20px; }
-            .collapsible-header { padding: 16px 20px 8px; }
+        @media (max-width: 600px) {
+            .details-grid { grid-template-columns: 1fr; }
+            .detail-section.full-width { grid-column: 1; }
+            .detail-divider { grid-column: 1; }
+            body { padding: 16px 10px 32px; }
+            .card-footer { flex-direction: column; gap: 4px; text-align: center; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ============================================
-         HEADER — Brand logo
-         ============================================ -->
     <div class="container">
-        <div class="header">
-            <div class="logo">M2NDLAB</div>
+        <div class="card-wrapper">
+            <div class="card-actions">
+                <button class="card-btn" id="btnRefresh" title="Refresh" onclick="refreshDetail()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+                        <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+                    </svg>
+                </button>
+                <button class="card-btn" id="btnJson" title="View raw JSON" onclick="toggleJsonView()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="card-flipper" id="cardFlipper">
+                <div class="card-front" id="cardFront">
+                    <div class="status-banner loading" id="statusBanner">
+                        <div class="status-icon"><div class="spinner"></div></div>
+                        <div class="status-title">Loading payment details…</div>
+                        <div class="status-subtitle">Retrieving transaction information</div>
+                    </div>
+                    <div id="cardBody"></div>
+                </div>
+                <div class="card-back" id="cardBack">
+                    <div class="json-view-header">
+                        <h3>Raw API Response</h3>
+                        <button class="btn-close-json" onclick="toggleJsonView()">← Back</button>
+                    </div>
+                    <div class="json-view-body">
+                        <pre id="jsonContent">No data yet.</pre>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- ============================================
-             MAIN CARD — Populated dynamically via JS
-             ============================================ -->
-        <div class="card" id="paymentCard">
-            <!-- Initial loading state -->
-            <div class="status-banner loading" id="statusBanner">
-                <div class="status-icon"><div class="spinner"></div></div>
-                <div class="status-title">Loading payment details…</div>
-                <div class="status-subtitle">Retrieving transaction information</div>
-            </div>
-            <div id="cardBody"></div>
+        <div class="page-footer">
+            <span class="brand">M2NDLAB</span>
+            <span class="dot"></span>
+            <a href="https://github.com/M2NDLAB/checkout-page" target="_blank" rel="noopener noreferrer" title="View on GitHub">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+            </a>
         </div>
     </div>
 
     <script>
         /**
          * =====================================================================
-         * PAYMENT RESULT PAGE
+         * PAYMENT RESULT PAGE — M2NDLAB
          * =====================================================================
-         *
          * Flusso:
          *   1. Parse dei parametri URL (a, Status, paymentID, paymentToken)
-         *   2. Chiamata GET al servizio /payment/detail/{paymentID}
-         *      con PaymentToken come header di autenticazione (sandbox only)
+         *   2. Chiamata GET /payment/detail/{paymentID} (sandbox only)
          *   3. Rendering del risultato in base a transactionResult:
          *      APPROVED | DECLINED | PENDING | WAITING | UNSUBMITTED
          *
-         * Mapping Status URL → transactionResult (da doc ufficiale):
-         *   OK → APPROVED
-         *   KO → DECLINED
-         *   XX → PENDING | WAITING | UNSUBMITTED (stato sospeso, esito asincrono)
-         *
-         * ATTENZIONE: con Status=XX Axerve redirige alla URL di esito POSITIVO,
-         * ma lo stato NON è definitivo. L'esito finale arriva via notifica S2S.
-         *
-         * Nota: la pagina è pensata per essere hostata su GitHub Pages come
-         * singolo file statico, riceve tutto il contesto dai query params.
+         * Mapping Status URL → transactionResult (doc ufficiale Axerve):
+         *   OK → APPROVED | KO → DECLINED | XX → PENDING/WAITING/UNSUBMITTED
          * =====================================================================
          */
 
-        // ==================================================================
-        // 1. CONFIGURAZIONE — Lettura parametri URL e selezione ambiente
-        // ==================================================================
+        const params       = new URLSearchParams(window.location.search);
+        const shopLogin    = params.get('a')            || '';
+        const urlStatus    = params.get('Status')       || '';
+        const paymentID    = params.get('paymentID')    || '';
+        const paymentToken = params.get('paymentToken') || '';
 
-        const params = new URLSearchParams(window.location.search);
-
-        // Parametri obbligatori dalla redirect URL di Axerve/GestPay
-        const shopLogin   = params.get('a')             || '';
-        const urlStatus   = params.get('Status')        || '';
-        const paymentID   = params.get('paymentID')     || '';
-        const paymentToken= params.get('paymentToken')  || '';
-
-        /**
-         * Ambiente API: solo sandbox.
-         * Quando sarà necessario supportare anche la produzione,
-         * riattivare la logica di selezione basata sul prefisso ShopLogin.
-         */
+        /** Solo sandbox. Per produzione: riattivare logica prefisso ShopLogin. */
         const apiBase = 'https://sandbox.gestpay.net/api';
 
+        /** Ultima risposta raw — per vista JSON e refresh */
+        let lastRawResponse = null;
+
         // ==================================================================
-        // 2. HELPER — Mappatura stato transazione → tema visivo
+        // FLIP & REFRESH
         // ==================================================================
 
-        /**
-         * Mappa il transactionResult (dal payload detail) o lo Status URL
-         * (come fallback) in una configurazione visiva.
-         *
-         * Valori transactionResult (da doc ufficiale Axerve):
-         *   - APPROVED:    pagamento approvato (Status URL = OK)
-         *   - DECLINED:    pagamento rifiutato (Status URL = KO)
-         *   - PENDING:     pagamento in attesa di conferma (Status URL = XX)
-         *   - WAITING:     pagamento in corso (Status URL = XX)
-         *   - UNSUBMITTED: pagamento non ancora iniziato (Status URL = XX)
-         *
-         * Valori Status URL:
-         *   - OK: esito positivo
-         *   - KO: esito negativo
-         *   - XX: stato sospeso — redirect alla URL positiva MA esito NON definitivo
-         */
+        function toggleJsonView() {
+            document.getElementById('cardFlipper').classList.toggle('flipped');
+        }
+
+        function syntaxHighlight(json) {
+            return JSON.stringify(json, null, 2).replace(
+                /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+                (m) => {
+                    let c = 'json-num';
+                    if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-str';
+                    else if (/true|false/.test(m)) c = 'json-bool';
+                    else if (/null/.test(m)) c = 'json-null';
+                    return `<span class="${c}">${m}</span>`;
+                }
+            );
+        }
+
+        function updateJsonView(data) {
+            lastRawResponse = data;
+            document.getElementById('jsonContent').innerHTML = data ? syntaxHighlight(data) : 'No data available.';
+        }
+
+        async function refreshDetail() {
+            const btn = document.getElementById('btnRefresh');
+            btn.classList.add('spinning');
+            document.getElementById('cardFlipper').classList.remove('flipped');
+            await fetchPaymentDetail();
+            btn.classList.remove('spinning');
+        }
+
+        // ==================================================================
+        // STATUS CONFIG
+        // ==================================================================
+
         function getStatusConfig(result) {
             const r = (result || '').toUpperCase();
-
-            // --- Esito positivo ---
-            if (r === 'APPROVED' || r === 'OK') {
-                return {
-                    theme:    'approved',
-                    icon:     '✓',
-                    title:    'Payment Approved',
-                    subtitle: 'Your transaction has been successfully processed'
-                };
+            if (r === 'APPROVED' || r === 'OK')
+                return { theme: 'approved', icon: '✓', title: 'Payment Approved', subtitle: 'Your transaction has been successfully processed' };
+            if (r === 'DECLINED' || r === 'KO')
+                return { theme: 'declined', icon: '✕', title: 'Payment Declined', subtitle: 'The transaction could not be completed' };
+            if (['PENDING','WAITING','UNSUBMITTED','XX'].includes(r)) {
+                const sub = { PENDING:'Awaiting confirmation from the payment provider', WAITING:'The payment is still being processed', UNSUBMITTED:'The payment has not been submitted yet', XX:'The payment status is not yet final' };
+                return { theme: 'waiting', icon: '⏳', title: 'Payment Pending', subtitle: sub[r]||'Awaiting confirmation', showSuspendedWarning: true };
             }
-
-            // --- Esito negativo ---
-            if (r === 'DECLINED' || r === 'KO') {
-                return {
-                    theme:    'declined',
-                    icon:     '✕',
-                    title:    'Payment Declined',
-                    subtitle: 'The transaction could not be completed'
-                };
-            }
-
-            // --- Stato sospeso (XX) ---
-            // PENDING: in attesa di conferma da parte del payment method (APM asincroni)
-            // WAITING: pagamento in corso, non ancora completato
-            // UNSUBMITTED: pagamento creato ma non ancora iniziato dal buyer
-            // XX: valore grezzo dallo Status URL prima del detail
-            if (['PENDING', 'WAITING', 'UNSUBMITTED', 'XX'].includes(r)) {
-                const subtitles = {
-                    'PENDING':     'Awaiting confirmation from the payment provider',
-                    'WAITING':     'The payment is still being processed',
-                    'UNSUBMITTED': 'The payment has not been submitted yet',
-                    'XX':          'The payment status is not yet final'
-                };
-                return {
-                    theme:    'waiting',
-                    icon:     '⏳',
-                    title:    'Payment Pending',
-                    subtitle: subtitles[r] || 'The transaction is awaiting confirmation',
-                    // Flag per mostrare il warning "non procedere"
-                    showSuspendedWarning: true
-                };
-            }
-
-            // --- Stato sconosciuto ---
-            return {
-                theme:    'declined',
-                icon:     '?',
-                title:    'Unknown Status',
-                subtitle: `Transaction result: ${result || 'N/A'}`
-            };
+            return { theme: 'declined', icon: '?', title: 'Unknown Status', subtitle: `Transaction result: ${result||'N/A'}` };
         }
 
         // ==================================================================
-        // 3. HELPER — Formattazione valori per la UI
+        // HELPERS
         // ==================================================================
 
-        /** Mappa codice valuta ISO-alpha a simbolo */
-        function currencySymbol(code) {
-            const map = { EUR: '€', USD: '$', GBP: '£', CHF: 'CHF' };
-            return map[(code || '').toUpperCase()] || code || '€';
+        function currencySymbol(c) { return {EUR:'€',USD:'$',GBP:'£',CHF:'CHF'}[(c||'').toUpperCase()]||c||'€'; }
+        function formatAmount(a) { const n=parseFloat(a); return isNaN(n)?a||'—':n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+        function eventTypeLabel(t) { return {AUT:'Authorization',MOV:'Settlement',CAN:'Cancellation',STO:'Refund',PRE:'Pre-Authorization',PREAUT:'Pre-Authorization'}[(t||'').toUpperCase()]||t||'—'; }
+        function stateLabel(s) { return {AUT:'Authorized',MOV:'Settled',CAN:'Cancelled',STO:'Refunded',PRE:'Pre-Authorized',WAITAUT:'Waiting Auth'}[(s||'').toUpperCase()]||s||'—'; }
+        function threeDsStatusLabel(s) { return {Y:'Authenticated',N:'Not Authenticated',A:'Attempted',U:'Unavailable',R:'Rejected',C:'Challenge Required'}[s]||s||'—'; }
+        function v(x) { return (x!==null&&x!==undefined&&x!=='')?x:'—'; }
+
+        function row(label, value, mono=true, raw=false, text=false) {
+            const cls = text ? 'detail-value text-font' : 'detail-value';
+            return `<div class="detail-row"><span class="detail-label">${label}</span><span class="${cls}">${raw?value:v(value)}</span></div>`;
         }
 
-        /** Formattazione importo con separatore migliaia */
-        function formatAmount(amount) {
-            const n = parseFloat(amount);
-            if (isNaN(n)) return amount || '—';
-            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
+        function badge(text, variant) { return `<span class="badge badge-${variant}">${text}</span>`; }
+        function resultVariant(r) { return r==='APPROVED'?'green':r==='DECLINED'?'red':'orange'; }
 
-        /**
-         * Mappatura dei codici tipo evento Axerve a label leggibili.
-         * Fonte: documentazione Axerve/GestPay event types.
-         */
-        function eventTypeLabel(type) {
-            const labels = {
-                'AUT': 'Authorization',
-                'MOV': 'Settlement',
-                'CAN': 'Cancellation',
-                'STO': 'Refund',
-                'PRE': 'Pre-Authorization',
-                'PREAUT': 'Pre-Authorization'
-            };
-            return labels[(type || '').toUpperCase()] || type || '—';
-        }
-
-        /**
-         * Mappatura transactionState a label leggibile.
-         */
-        function stateLabel(state) {
-            const labels = {
-                'AUT': 'Authorized',
-                'MOV': 'Settled',
-                'CAN': 'Cancelled',
-                'STO': 'Refunded',
-                'PRE': 'Pre-Authorized',
-                'WAITAUT': 'Waiting Authorization'
-            };
-            return labels[(state || '').toUpperCase()] || state || '—';
-        }
-
-        /** 3DS authentication status description */
-        function threeDsStatus(status) {
-            const map = {
-                'Y': 'Authenticated',
-                'N': 'Not Authenticated',
-                'A': 'Attempted',
-                'U': 'Unavailable',
-                'R': 'Rejected',
-                'C': 'Challenge Required'
-            };
-            return map[status] || status || '—';
-        }
-
-        /** Mostra valore o dash se vuoto */
-        function val(v) {
-            return (v !== null && v !== undefined && v !== '') ? v : '—';
-        }
+        function toggleSection(h) { h.classList.toggle('open'); h.nextElementSibling.classList.toggle('open'); }
 
         // ==================================================================
-        // 4. RENDERING — Costruzione del DOM dal payload
+        // RENDER CARD — ALL fields, two-column layout
         // ==================================================================
 
-        function renderCard(payload) {
+        function renderCard(p) {
             const banner = document.getElementById('statusBanner');
             const body   = document.getElementById('cardBody');
+            const cfg    = getStatusConfig(p.transactionResult);
+            const curr   = currencySymbol(p.currency);
+            const amt    = p.events?.[0]?.event?.eventamount;
 
-            const config = getStatusConfig(payload.transactionResult);
-            const curr   = currencySymbol(payload.currency);
+            banner.className = `status-banner ${cfg.theme}`;
+            banner.innerHTML = `<div class="status-icon">${cfg.icon}</div><div class="status-title">${cfg.title}</div><div class="status-subtitle">${cfg.subtitle}</div>`;
+            if (cfg.theme==='waiting') banner.querySelector('.status-icon').classList.add('pulse');
 
-            // -- Importo: preso dal primo evento, oppure non disponibile
-            const firstEventAmount = payload.events?.[0]?.event?.eventamount;
+            let h = '';
 
-            // ---- Banner stato ----
-            banner.className = `status-banner ${config.theme}`;
-            banner.innerHTML = `
-                <div class="status-icon">${config.icon}</div>
-                <div class="status-title">${config.title}</div>
-                <div class="status-subtitle">${config.subtitle}</div>
-            `;
-
-            // Classe pulse per waiting
-            if (config.theme === 'waiting') {
-                banner.querySelector('.status-icon').classList.add('pulse');
+            if (cfg.showSuspendedWarning) {
+                h += `<div class="suspended-warning" style="margin:12px 14px 0;"><span class="warn-icon">⚠</span><p><strong>Do not fulfill this order yet.</strong><br>The payment outcome is not final. A S2S notification will confirm the definitive result.</p></div>`;
             }
 
-            // ---- Body ----
-            let html = '';
-
-            // Warning per stato sospeso (XX) — da doc ufficiale:
-            // "Se ricevi lo stato XX, non procedere con la spedizione della merce
-            //  o l'erogazione del servizio. Attendi la notifica S2S."
-            if (config.showSuspendedWarning) {
-                html += `
-                    <div class="suspended-warning" style="margin-top:20px;">
-                        <span class="warn-icon">⚠</span>
-                        <p>
-                            <strong>Do not fulfill this order yet.</strong><br>
-                            The payment outcome is not final. A server-to-server (S2S) notification 
-                            will confirm the definitive result (OK or KO).
-                        </p>
-                    </div>
-                `; 
+            if (amt) {
+                h += `<div class="amount-section"><div class="amount-label">Total Amount</div><div class="amount-value"><span class="currency">${curr}</span>${formatAmount(amt)}</div></div>`;
             }
 
-            // Importo
-            if (firstEventAmount) {
-                html += `
-                    <div class="amount-section">
-                        <div class="amount-label">Total Amount</div>
-                        <div class="amount-value">
-                            <span class="currency">${curr}</span>${formatAmount(firstEventAmount)}
-                        </div>
-                    </div>
-                `;
+            h += `<div class="details-grid">`;
+
+            // COL 1 — Order
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Order Details</div>`;
+            h += row('Transaction Type', v(p.transactionType), false, false, true);
+            h += row('Shop TX ID', p.shopTransactionID);
+            h += row('Shop TX ID 2', p.shopTransactionID_2);
+            h += row('Payment ID', p.paymentID);
+            h += row('Bank TX ID', p.bankTransactionID);
+            h += row('Auth Code', p.authorizationCode);
+            h += `</div>`;
+
+            // COL 2 — Payment
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Payment Information</div>`;
+            h += row('Method', badge(v(p.paymentMethod),'blue'), false, true);
+            h += row('Product Type', v(p.productType), false, false, true);
+            h += row('Company', v(p.company), false, false, true);
+            h += row('Currency', v(p.currency), false, false, true);
+            h += row('Country', v(p.country), false, false, true);
+            h += row('CVV Present', p.cvvPresent==='TRUE'?badge('Yes','green'):badge('No','neutral'), false, true);
+            h += row('Masked PAN', v(p.maskedPAN));
+            h += `</div>`;
+
+            h += `<div class="detail-divider"></div>`;
+
+            // COL 1 — State
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Transaction State</div>`;
+            h += row('Result', badge(v(p.transactionResult), resultVariant(p.transactionResult)), false, true);
+            h += row('State', v(stateLabel(p.transactionState)), false, false, true);
+            h += row('Error Code', v(p.transactionErrorCode));
+            h += row('Error Desc', v(p.transactionErrorDescription), false, false, true);
+            h += row('Alert Code', v(p.alertCode));
+            h += row('Alert Desc', v(p.alertDescription), false, false, true);
+            h += `</div>`;
+
+            // COL 2 — Token / Card
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Card & Token</div>`;
+            const td = p.tokenDetails;
+            const cd = td?.CardDetails;
+            h += row('Token', v(td?.TokenValue));
+            h += row('Token Expiry', td?`${v(td.TokenExpiryMonth)}/${v(td.TokenExpiryYear)}`:'—');
+            h += row('Token Provider', v(td?.TokenProvider), false, false, true);
+            h += row('Card Suffix', v(cd?.CardSuffix));
+            h += row('Card Expiry', cd?`${v(cd.CardExpiryMonth)}/${v(cd.CardExpiryYear)}`:'—');
+            h += row('Cardholder', v(cd?.CardHolderName), false, false, true);
+            h += `</div>`;
+
+            h += `<div class="detail-divider"></div>`;
+
+            // FULL — 3D Secure (collapsible)
+            if (p.threeDS) {
+                const ar = p.threeDS.authenticationResult||{};
+                const td3 = p.threeDS.transDetails||{};
+                h += `<div class="detail-section full-width">`;
+                h += `<div class="collapsible-header" onclick="toggleSection(this)"><span class="detail-group-title" style="padding:0">3D Secure</span><span class="chevron">▼</span></div>`;
+                h += `<div class="collapsible-content"><div class="details-grid">`;
+                h += `<div class="detail-section">`;
+                h += row('Auth Status', badge(threeDsStatusLabel(ar.authenticationStatus), ar.authenticationStatus==='Y'?'green':'orange'), false, true);
+                h += row('Auth Level', v(ar.authenticationLevel), false, false, true);
+                h += row('Status Reason', v(ar.authStatusReason));
+                h += row('Challenge Trans', v(ar.challengeResultTransStatus));
+                h += row('XID', v(ar.XID));
+                h += row('AV', v(ar.AV));
+                h += `</div><div class="detail-section">`;
+                h += row('ECI', v(ar.ECI));
+                h += row('AV Algorithm', v(ar.AVAlgorithm));
+                h += row('3DS Version', v(ar.threeDsVersion));
+                h += row('TD Level', v(p.tdLevel), false, false, true);
+                h += row('Auth Data', v(td3.authData));
+                h += row('Auth Method', v(td3.authMethod));
+                h += row('Auth Timestamp', v(td3.authTimeStamp));
+                h += row('ACS ID', v(td3.acsID));
+                h += `</div></div></div></div>`;
             }
 
-            // ---- Order details ----
-            html += `<div class="details">`;
-            html += `<div class="detail-group-title">Order Details</div>`;
-            html += detailRow('Shop Transaction ID', payload.shopTransactionID, true);
-            if (payload.shopTransactionID_2) {
-                html += detailRow('Shop Transaction ID 2', payload.shopTransactionID_2, true);
-            }
-            html += detailRow('Payment ID', payload.paymentID);
-            html += detailRow('Bank Transaction ID', payload.bankTransactionID);
-            html += detailRow('Authorization Code', payload.authorizationCode);
-
-            html += `<div class="detail-divider"></div>`;
-
-            // ---- Payment info ----
-            html += `<div class="detail-group-title">Payment Information</div>`;
-            html += detailRow('Payment Method', badgeHtml(val(payload.paymentMethod), 'blue'), false, true);
-            if (payload.productType) {
-                html += detailRow('Product Type', val(payload.productType), false, false, true);
-            }
-            html += detailRow('Currency', val(payload.currency), false, false, true);
-            html += detailRow('Country', val(payload.country), false, false, true);
-
-            // Card details (da tokenDetails se presenti)
-            const cd = payload.tokenDetails?.CardDetails;
-            if (cd?.CardSuffix) {
-                html += detailRow('Card', `•••• •••• •••• ${cd.CardSuffix}`);
-                html += detailRow('Expiry', `${cd.CardExpiryMonth}/${cd.CardExpiryYear}`);
-                if (cd.CardHolderName) {
-                    html += detailRow('Cardholder', val(cd.CardHolderName), false, false, true);
-                }
-            }
-
-            html += detailRow('CVV Provided', payload.cvvPresent === 'TRUE'
-                ? badgeHtml('Yes', 'green') : badgeHtml('No', 'neutral'), false, true);
-
-            html += `<div class="detail-divider"></div>`;
-
-            // ---- Transaction state ----
-            html += `<div class="detail-group-title">Transaction State</div>`;
-            html += detailRow('Result', badgeHtml(val(payload.transactionResult),
-                payload.transactionResult === 'APPROVED' ? 'green' 
-                : payload.transactionResult === 'DECLINED' ? 'red' 
-                : 'orange'), false, true);
-            html += detailRow('State', val(stateLabel(payload.transactionState)), false, false, true);
-            html += detailRow('Error Code', val(payload.transactionErrorCode));
-            html += detailRow('Description', val(payload.transactionErrorDescription), false, false, true);
-
-            // ---- 3D Secure (collapsible) ----
-            const threeDS = payload.threeDS;
-            if (threeDS?.authenticationResult) {
-                const ar = threeDS.authenticationResult;
-                html += `<div class="detail-divider"></div>`;
-                html += `
-                    <div class="collapsible-header" onclick="toggleSection(this)">
-                        <span class="detail-group-title" style="padding:0">3D Secure</span>
-                        <span class="chevron">▼</span>
-                    </div>
-                    <div class="collapsible-content">
-                `;
-                html += detailRow('Authentication', badgeHtml(threeDsStatus(ar.authenticationStatus),
-                    ar.authenticationStatus === 'Y' ? 'green' : 'orange'), false, true);
-                html += detailRow('Level', val(ar.authenticationLevel), false, false, true);
-                html += detailRow('ECI', val(ar.ECI));
-                html += detailRow('3DS Version', val(ar.threeDsVersion));
-                html += detailRow('TD Level', val(payload.tdLevel), false, false, true);
-                html += `</div>`;
-            }
-
-            // ---- Events timeline (collapsible) ----
-            if (payload.events?.length) {
-                html += `<div class="detail-divider"></div>`;
-                html += `
-                    <div class="collapsible-header" onclick="toggleSection(this)">
-                        <span class="detail-group-title" style="padding:0">Events</span>
-                        <span class="chevron">▼</span>
-                    </div>
-                    <div class="collapsible-content">
-                `;
-                payload.events.forEach(ev => {
+            // FULL — Events (collapsible)
+            if (p.events?.length) {
+                h += `<div class="detail-section full-width">`;
+                h += `<div class="collapsible-header" onclick="toggleSection(this)"><span class="detail-group-title" style="padding:0">Events (${p.events.length})</span><span class="chevron">▼</span></div>`;
+                h += `<div class="collapsible-content">`;
+                p.events.forEach(ev => {
                     const e = ev.event;
-                    html += `
-                        <div class="event-item">
-                            <div class="event-dot"></div>
-                            <div class="event-info">
-                                <div>
-                                    <div class="event-type">${eventTypeLabel(e.eventtype)}</div>
-                                    <div class="event-date">${val(e.eventdate)}</div>
-                                </div>
-                                <div class="event-amount">${curr} ${formatAmount(e.eventamount)}</div>
-                            </div>
-                        </div>
-                    `;
+                    h += `<div class="event-item"><div class="event-dot"></div><div class="event-info"><div><div class="event-type">${eventTypeLabel(e.eventtype)}</div><div class="event-date">${v(e.eventdate)}</div></div><div class="event-amount">${curr} ${formatAmount(e.eventamount)}</div></div></div>`;
+                    if (e.eventARN||e.eventID||e.eventReferred)
+                        h += `<div style="padding:0 18px 2px 32px;font-size:10px;color:var(--text-tertiary);font-family:'JetBrains Mono',monospace;">${e.eventARN?'ARN:'+e.eventARN+' ':''}${e.eventID?'ID:'+e.eventID+' ':''}${e.eventReferred?'Ref:'+e.eventReferred:''}</div>`;
                 });
-                html += `</div>`;
+                h += `</div></div>`;
             }
 
-            // ---- Automatic operation (se presente) ----
-            if (payload.automaticOperation?.type) {
-                const ao = payload.automaticOperation;
-                html += `<div class="detail-divider"></div>`;
-                html += `<div class="detail-group-title">Scheduled Operation</div>`;
-                html += detailRow('Type', eventTypeLabel(ao.type), false, false, true);
-                html += detailRow('Date', val(ao.date), false, false, true);
-                html += detailRow('Amount', `${curr} ${formatAmount(ao.amount)}`);
-            }
+            h += `<div class="detail-divider"></div>`;
 
-            // ---- Buyer info (se presente) ----
-            if (payload.buyer?.name || payload.buyer?.email) {
-                html += `<div class="detail-divider"></div>`;
-                html += `<div class="detail-group-title">Buyer</div>`;
-                if (payload.buyer.name)  html += detailRow('Name', val(payload.buyer.name), false, false, true);
-                if (payload.buyer.email) html += detailRow('Email', val(payload.buyer.email));
-            }
+            // COL 1 — Buyer
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Buyer</div>`;
+            h += row('Name', v(p.buyer?.name), false, false, true);
+            h += row('Email', v(p.buyer?.email));
+            h += `</div>`;
 
-            html += `</div>`; // chiude .details
+            // COL 2 — Risk & Fraud
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Risk & Fraud</div>`;
+            h += row('Risk Code', v(p.risk?.riskResponseCode));
+            h += row('Risk Desc', v(p.risk?.riskResponseDescription), false, false, true);
+            h += row('Fraud Check', v(p.fraudPrevention?.check), false, false, true);
+            h += row('Fraud State', v(p.fraudPrevention?.state), false, false, true);
+            h += row('Fraud Desc', v(p.fraudPrevention?.description), false, false, true);
+            h += row('Fraud Order', v(p.fraudPrevention?.order));
+            h += `</div>`;
 
-            // ---- Footer ----
-            html += `
-                <div class="card-footer">
-                    <p>Processed by <strong>M2NDLAB</strong> via Axerve</p>
-                    <div class="tx-id">Payment ID: ${val(payload.paymentID)}</div>
-                    <div class="tx-id" style="color:var(--color-waiting);margin-top:4px;">⚠ SANDBOX ENVIRONMENT</div>
-                </div>
-            `;
+            h += `<div class="detail-divider"></div>`;
 
-            body.innerHTML = html;
-        }
+            // COL 1 — Auto Operation
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Automatic Operation</div>`;
+            const ao = p.automaticOperation;
+            h += row('Type', ao?.type?eventTypeLabel(ao.type):'—', false, false, true);
+            h += row('Date', v(ao?.date), false, false, true);
+            h += row('Amount', ao?.amount?`${curr} ${formatAmount(ao.amount)}`:'—');
+            h += `</div>`;
 
-        /**
-         * Genera l'HTML di una riga dettaglio key-value.
-         * @param {string}  label         - Etichetta a sinistra
-         * @param {string}  value         - Valore a destra (può contenere HTML per badge)
-         * @param {boolean} mono          - true per font monospace sul valore
-         * @param {boolean} rawValue      - true se il value contiene già HTML (badge)
-         * @param {boolean} textFont      - true per usare il font di testo (non mono)
-         */
-        function detailRow(label, value, mono = true, rawValue = false, textFont = false) {
-            const cls = textFont ? 'detail-value text-font' : (mono ? 'detail-value' : 'detail-value text-font');
-            if (rawValue) {
-                return `
-                    <div class="detail-row">
-                        <span class="detail-label">${label}</span>
-                        <span class="${cls}">${value}</span>
-                    </div>`;
-            }
-            return `
-                <div class="detail-row">
-                    <span class="detail-label">${label}</span>
-                    <span class="${cls}">${val(value)}</span>
-                </div>`;
-        }
+            // COL 2 — Other
+            h += `<div class="detail-section">`;
+            h += `<div class="detail-group-title">Other</div>`;
+            h += row('DCC', p.dcc?JSON.stringify(p.dcc):'—', false, false, true);
+            h += row('Custom Info', p.customInfo?JSON.stringify(p.customInfo):'—', false, false, true);
+            h += `</div>`;
 
-        /** Genera un badge HTML */
-        function badgeHtml(text, variant) {
-            return `<span class="badge badge-${variant}">${text}</span>`;
-        }
+            h += `</div>`; // close grid
 
-        /** Toggle sezioni collapsible */
-        function toggleSection(header) {
-            header.classList.toggle('open');
-            const content = header.nextElementSibling;
-            content.classList.toggle('open');
+            // Footer
+            h += `<div class="card-footer"><p>Processed by <strong>M2NDLAB</strong> via Fabrick</p><div><div class="tx-id">ShopLogin: ${v(shopLogin)}</div><div class="tx-id" style="color:var(--color-waiting);margin-top:2px;">⚠ SANDBOX</div></div></div>`;
+
+            body.innerHTML = h;
         }
 
         // ==================================================================
-        // 5. STATO DI ERRORE — Fallback se la chiamata API fallisce
+        // RENDER ERROR
         // ==================================================================
 
         function renderError(message, detail) {
             const banner = document.getElementById('statusBanner');
             const body   = document.getElementById('cardBody');
 
-            // Se lo Status URL era OK/KO, usiamo quello come fallback minimo
-            const fallbackConfig = getStatusConfig(urlStatus);
+            banner.className = 'status-banner error';
+            banner.innerHTML = `<div class="status-icon">!</div><div class="status-title">${message}</div><div class="status-subtitle">${detail||''}</div>`;
 
-            banner.className = `status-banner error`;
-            banner.innerHTML = `
-                <div class="status-icon">!</div>
-                <div class="status-title">${message}</div>
-                <div class="status-subtitle">${detail || ''}</div>
-            `;
-
-            let html = '';
-
-            // Se lo Status URL è XX, mostra il warning sospensione anche in errore
-            if (urlStatus.toUpperCase() === 'XX') {
-                html += `
-                    <div class="suspended-warning" style="margin:20px 20px 0;">
-                        <span class="warn-icon">⚠</span>
-                        <p>
-                            <strong>Do not fulfill this order yet.</strong><br>
-                            URL Status is XX (suspended). The final outcome will arrive via S2S notification.
-                        </p>
-                    </div>
-                `;
+            let h = '';
+            if (urlStatus.toUpperCase()==='XX') {
+                h += `<div class="suspended-warning" style="margin:12px 14px 0;"><span class="warn-icon">⚠</span><p><strong>Do not fulfill this order yet.</strong><br>URL Status is XX (suspended). The final outcome will arrive via S2S notification.</p></div>`;
             }
+            h += `<div class="details-grid"><div class="detail-section full-width">`;
+            h += `<div class="detail-group-title">Available Information</div>`;
+            h += row('Shop Login', shopLogin);
+            h += row('URL Status', urlStatus, false, false, true);
+            h += row('Payment ID', paymentID);
+            h += row('Environment', 'Sandbox', false, false, true);
+            h += `</div></div>`;
+            h += `<div class="card-footer"><p>Could not retrieve full transaction details.</p><div class="tx-id">ShopLogin: ${v(shopLogin)}</div></div>`;
 
-            html += `<div class="details">`;
-            html += `<div class="detail-group-title">Available Information</div>`;
-            html += detailRow('Shop Login', shopLogin);
-            html += detailRow('URL Status', urlStatus, false, false, true);
-            html += detailRow('Payment ID', paymentID);
-            html += detailRow('Environment', 'Sandbox', false, false, true);
-            html += `</div>`;
-            html += `
-                <div class="card-footer">
-                    <p>Could not retrieve full transaction details.<br>Please contact support if needed.</p>
-                    <div class="tx-id" style="color:var(--color-waiting);margin-top:4px;">⚠ SANDBOX ENVIRONMENT</div>
-                </div>
-            `;
-
-            body.innerHTML = html;
+            body.innerHTML = h;
         }
 
-        /**
-         * Stato specifico per quando mancano i parametri URL obbligatori.
-         * Può succedere se qualcuno accede alla pagina direttamente.
-         */
         function renderMissingParams() {
             const banner = document.getElementById('statusBanner');
             const body   = document.getElementById('cardBody');
-
-            banner.className = `status-banner error`;
-            banner.innerHTML = `
-                <div class="status-icon">!</div>
-                <div class="status-title">Missing Parameters</div>
-                <div class="status-subtitle">Required URL parameters not found</div>
-            `;
-
-            body.innerHTML = `
-                <div class="details" style="padding:20px 28px;">
-                    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
-                        This page requires the following URL parameters to display payment results:
-                        <code style="display:block;margin-top:12px;padding:12px;background:var(--surface-2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all;">
-                            ?a=SHOPLOGIN&Status=OK&paymentID=123&paymentToken=abc-def
-                        </code>
-                    </p>
-                </div>
-                <div class="card-footer">
-                    <p>You were probably redirected here by mistake.</p>
-                </div>
-            `;
+            banner.className = 'status-banner error';
+            banner.innerHTML = `<div class="status-icon">!</div><div class="status-title">Missing Parameters</div><div class="status-subtitle">Required URL parameters not found</div>`;
+            body.innerHTML = `<div style="padding:18px;"><p style="font-size:12px;color:var(--text-secondary);line-height:1.6;">This page requires URL parameters:<code style="display:block;margin-top:8px;padding:10px;background:var(--surface-2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;word-break:break-all;">?a=SHOPLOGIN&Status=OK&paymentID=123&paymentToken=abc-def</code></p></div><div class="card-footer"><p>You were probably redirected here by mistake.</p><span></span></div>`;
         }
 
         // ==================================================================
-        // 6. FETCH — Chiamata API e orchestrazione
+        // FETCH
         // ==================================================================
 
-        /**
-         * Chiamata al servizio Axerve /payment/detail/{paymentID}.
-         *
-         * - Il PaymentToken viene usato come header di autenticazione:
-         *   è il token generato durante il flusso di pagamento e ancora
-         *   valido nel momento della redirect.
-         * - Il Cookie ASP.NET_SessionId NON viene incluso: non è necessario
-         *   per l'autenticazione via PaymentToken, ed è specifico della
-         *   sessione Postman/browser di test.
-         */
         async function fetchPaymentDetail() {
+            if (!paymentID||!paymentToken) { renderMissingParams(); return; }
 
-            // Validazione parametri minimi
-            if (!paymentID || !paymentToken) {
-                renderMissingParams();
-                return;
-            }
-
-            const url = `${apiBase}/v1/payment/detail/${paymentID}`;
+            const banner = document.getElementById('statusBanner');
+            banner.className = 'status-banner loading';
+            banner.innerHTML = `<div class="status-icon"><div class="spinner"></div></div><div class="status-title">Loading payment details…</div><div class="status-subtitle">Retrieving transaction information</div>`;
+            document.getElementById('cardBody').innerHTML = '';
 
             try {
-                const response = await fetch(url, {
+                const res = await fetch(`${apiBase}/v1/payment/detail/${paymentID}`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'PaymentToken': paymentToken
-                    }
+                    headers: { 'Content-Type': 'application/json', 'PaymentToken': paymentToken }
                 });
 
-                if (!response.ok) {
-                    renderError(
-                        'API Error',
-                        `HTTP ${response.status} — ${response.statusText}`
-                    );
+                if (!res.ok) {
+                    updateJsonView({ httpStatus: res.status, statusText: res.statusText });
+                    renderError('API Error', `HTTP ${res.status} — ${res.statusText}`);
                     return;
                 }
 
-                const data = await response.json();
+                const data = await res.json();
+                updateJsonView(data);
 
-                // L'API Axerve restituisce error.code "0" per successo,
-                // qualsiasi altro codice indica un errore applicativo
                 if (data.error && data.error.code !== '0') {
-                    renderError(
-                        'Transaction Error',
-                        `[${data.error.code}] ${data.error.description}`
-                    );
+                    renderError('Transaction Error', `[${data.error.code}] ${data.error.description}`);
                     return;
                 }
-
-                if (!data.payload) {
-                    renderError('Unexpected Response', 'No payload in API response');
-                    return;
-                }
+                if (!data.payload) { renderError('Unexpected Response', 'No payload in API response'); return; }
 
                 renderCard(data.payload);
-
             } catch (err) {
-                // Errori di rete (CORS, DNS, timeout, ecc.)
-                renderError(
-                    'Connection Error',
-                    `Unable to reach the payment gateway. ${err.message || ''}`
-                );
+                updateJsonView({ error: err.message });
+                renderError('Connection Error', `Unable to reach the payment gateway. ${err.message||''}`);
             }
         }
 
         // ==================================================================
-        // 7. BOOT — Avvio al caricamento della pagina
+        // BOOT
         // ==================================================================
         fetchPaymentDetail();
     </script>
