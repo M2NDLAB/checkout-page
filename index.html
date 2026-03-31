@@ -497,9 +497,11 @@
 
         function flipToJson() {
             document.getElementById('cardFlipper').classList.add('flipped');
+            document.getElementById('frontActions').style.display = 'none';
         }
         function flipToFront() {
             document.getElementById('cardFlipper').classList.remove('flipped');
+            document.getElementById('frontActions').style.display = 'flex';
         }
 
         // ==================================================================
@@ -528,6 +530,7 @@
             const btn = document.getElementById('btnRefresh');
             btn.classList.add('spinning');
             document.getElementById('cardFlipper').classList.remove('flipped');
+            document.getElementById('frontActions').style.display = 'flex';
             await fetchPaymentDetail();
             btn.classList.remove('spinning');
         }
