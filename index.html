@@ -5,839 +5,602 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M2NDLAB — Payment Result</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /*
+         * Fabrick brand palette (sourced from fabrick.com):
+         *   Primary navy: #002E6D
+         *   Accent blue:  #0057B8
+         *   Light blue:   #0066CC
+         *   Sky/bg:       #EAF1FB
+         *   Text dark:    #0B1A30
+         *   Font:         Inter (main body on fabrick.com)
+         */
         :root {
-            --brand-navy:    #002E6D;
-            --brand-blue:    #0066CC;
-            --brand-sky:     #E8F0FE;
+            --fabrick-navy:    #002E6D;
+            --fabrick-blue:    #0057B8;
+            --fabrick-accent:  #0066CC;
+            --fabrick-sky:     #EAF1FB;
+            --fabrick-dark:    #0B1A30;
 
-            --color-approved:       #0A8754;
-            --color-approved-bg:    #E6F4ED;
-            --color-approved-ring:  #B7E4CD;
-            --color-declined:       #C4320A;
-            --color-declined-bg:    #FEF0EC;
-            --color-declined-ring:  #F9C9B8;
-            --color-waiting:        #B45309;
-            --color-waiting-bg:     #FEF7EC;
-            --color-waiting-ring:   #FDE7C2;
+            --ok:       #0D9668;
+            --ok-bg:    #ECFDF5;
+            --ok-ring:  #A7F3D0;
+            --ko:       #DC2626;
+            --ko-bg:    #FEF2F2;
+            --ko-ring:  #FECACA;
+            --wait:     #D97706;
+            --wait-bg:  #FFFBEB;
+            --wait-ring:#FDE68A;
 
-            --surface-0:  #F4F6F9;
-            --surface-1:  #FFFFFF;
-            --surface-2:  #F8F9FB;
-            --border:     #E2E6ED;
-            --border-light:#EEF0F4;
+            --bg:       #F3F5F9;
+            --card:     #FFFFFF;
+            --card-2:   #F8FAFC;
+            --brd:      #E5E8EE;
+            --brd-l:    #EEF1F5;
 
-            --text-primary:   #0A1628;
-            --text-secondary: #4A5568;
-            --text-tertiary:  #8896A6;
+            --t1: #0B1A30;
+            --t2: #475569;
+            --t3: #94A3B8;
 
-            --radius-sm:  8px;
-            --radius-xl:  20px;
-            --shadow-card: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.06);
+            --r-sm: 10px;
+            --r-lg: 16px;
+            --r-xl: 22px;
+            --shadow: 0 1px 2px rgba(0,0,0,.03), 0 4px 16px rgba(0,0,0,.06);
         }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         html {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 14px;
-            color: var(--text-primary);
-            background: var(--surface-0);
+            color: var(--t1);
+            background: var(--bg);
             -webkit-font-smoothing: antialiased;
         }
 
         body {
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 24px 16px 40px;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 32px 16px 48px;
         }
 
-        .container { width: 100%; max-width: 780px; }
+        .container { width: 100%; max-width: 720px; }
 
-        /* =========================================================
-           FLIP CARD
-           ========================================================= */
-        .card-wrapper { perspective: 1200px; position: relative; }
-
-        .card-flipper {
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        /* ==== FLIP CARD ==== */
+        .card-wrap { perspective: 1200px; position: relative; }
+        .flipper {
+            transition: transform 0.55s cubic-bezier(.4,0,.2,1);
             transform-style: preserve-3d;
             position: relative;
         }
-        .card-flipper.flipped { transform: rotateY(180deg); }
+        .flipper.flipped { transform: rotateY(180deg); }
 
-        .card-front, .card-back {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            background: var(--surface-1);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-card);
-            border: 1px solid var(--border-light);
+        .face {
+            backface-visibility: hidden; -webkit-backface-visibility: hidden;
+            background: var(--card);
+            border-radius: var(--r-xl);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--brd-l);
             overflow: hidden;
         }
-
-        .card-back {
-            position: absolute;
-            inset: 0;
-            transform: rotateY(180deg);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ---- Action buttons ---- */
-        .card-actions {
-            position: absolute;
-            top: 12px; left: 12px; right: 12px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        .card-btn {
-            pointer-events: auto;
-            width: 30px; height: 30px;
-            border-radius: 7px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: rgba(255,255,255,0.0);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        .card-btn:hover {
-            background: rgba(255,255,255,0.92);
-            color: var(--brand-navy);
-            border-color: var(--border);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .card-btn svg { width: 14px; height: 14px; }
-        .card-btn.spinning svg { animation: spin 0.8s linear infinite; }
-
-        /* Back-side action buttons: dark theme */
-        .card-back-actions {
-            position: absolute;
-            top: 12px; left: 12px; right: 12px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        .card-btn-back {
-            pointer-events: auto;
-            width: 30px; height: 30px;
-            border-radius: 7px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: transparent;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        .card-btn-back:hover {
-            background: rgba(255,255,255,0.12);
-            color: #c8d3e0;
-            border-color: rgba(255,255,255,0.15);
-        }
-        .card-btn-back svg { width: 14px; height: 14px; }
-        .card-btn-back.spinning svg { animation: spin 0.8s linear infinite; }
-
-        /* ---- Status banner ---- */
-        .status-banner {
-            padding: 22px 28px 18px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .status-banner::before {
-            content: '';
+        .face-back {
             position: absolute; inset: 0;
-            opacity: 0.06;
-            background: radial-gradient(circle at 30% 20%, currentColor 0%, transparent 70%);
-            pointer-events: none;
+            transform: rotateY(180deg);
+            display: flex; flex-direction: column;
         }
 
-        .status-banner.approved { background: var(--color-approved-bg); color: var(--color-approved); }
-        .status-banner.declined { background: var(--color-declined-bg); color: var(--color-declined); }
-        .status-banner.waiting  { background: var(--color-waiting-bg);  color: var(--color-waiting); }
-        .status-banner.loading  { background: var(--brand-sky);         color: var(--brand-blue); }
-        .status-banner.error    { background: var(--color-declined-bg); color: var(--color-declined); }
+        /* ==== GHOST BUTTONS ==== */
+        .ghost-bar {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between;
+            z-index: 10; pointer-events: none;
+        }
+        .ghost {
+            pointer-events: auto;
+            width: 28px; height: 28px; border-radius: 7px;
+            border: none; background: transparent;
+            color: transparent; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .25s;
+        }
+        .ghost:hover {
+            background: rgba(255,255,255,.88); color: var(--fabrick-navy);
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+        .ghost svg { width: 13px; height: 13px; stroke-width: 2.5; }
+        .ghost.spin svg { animation: spin .7s linear infinite; }
 
-        .status-icon {
-            width: 48px; height: 48px; border-radius: 50%;
+        /* Dark ghost for back face */
+        .ghost-dark:hover { background: rgba(255,255,255,.1); color: #94A3B8; }
+
+        /* ==== STATUS BANNER ==== */
+        .banner { padding: 28px 24px 22px; text-align: center; position: relative; overflow: hidden; }
+        .banner::after {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: radial-gradient(ellipse at 40% 0%, currentColor 0%, transparent 65%);
+            opacity: .05;
+        }
+        .banner.ok   { background: var(--ok-bg);   color: var(--ok); }
+        .banner.ko   { background: var(--ko-bg);   color: var(--ko); }
+        .banner.wait { background: var(--wait-bg);  color: var(--wait); }
+        .banner.load { background: var(--fabrick-sky); color: var(--fabrick-blue); }
+        .banner.err  { background: var(--ko-bg);   color: var(--ko); }
+
+        .sicon {
+            width: 54px; height: 54px; border-radius: 50%;
             display: inline-flex; align-items: center; justify-content: center;
-            margin-bottom: 8px; font-size: 20px;
+            margin-bottom: 10px; font-size: 22px; font-weight: 800;
+        }
+        .banner.ok   .sicon { background: var(--ok);   color: #fff; box-shadow: 0 0 0 6px var(--ok-ring); }
+        .banner.ko   .sicon { background: var(--ko);   color: #fff; box-shadow: 0 0 0 6px var(--ko-ring); }
+        .banner.wait .sicon { background: var(--wait);  color: #fff; box-shadow: 0 0 0 6px var(--wait-ring); }
+        .banner.load .sicon { background: var(--fabrick-blue); color: #fff; box-shadow: 0 0 0 6px #B8D4F0; }
+        .banner.err  .sicon { background: var(--ko);   color: #fff; box-shadow: 0 0 0 6px var(--ko-ring); }
+
+        .stitle { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+        .ssub   { font-size: 12px; opacity: .75; font-weight: 500; margin-top: 2px; }
+
+        /* ==== AMOUNT ==== */
+        .amt-bar {
+            padding: 18px 24px;
+            display: flex; align-items: baseline; justify-content: center; gap: 6px;
+            border-bottom: 1px solid var(--brd);
+            background: var(--card-2);
+        }
+        .amt-bar .cur { font-size: 18px; font-weight: 700; color: var(--t3); }
+        .amt-bar .num { font-size: 34px; font-weight: 800; color: var(--fabrick-navy); letter-spacing: -1.5px; }
+        .amt-bar .dec { font-size: 20px; font-weight: 700; color: var(--fabrick-navy); opacity: .6; }
+        .amt-bar .cur-code { font-size: 12px; font-weight: 600; color: var(--t3); margin-left: 2px; text-transform: uppercase; }
+
+        /* ==== SUSPENDED WARNING ==== */
+        .warn-box {
+            margin: 14px 16px 0; padding: 10px 12px;
+            background: var(--wait-bg); border: 1px solid var(--wait-ring);
+            border-radius: var(--r-sm); display: flex; gap: 8px;
+        }
+        .warn-box p { font-size: 11px; color: var(--wait); font-weight: 500; line-height: 1.5; }
+
+        /* ==== CLUSTER SECTIONS ==== */
+        .cluster { border-bottom: 1px solid var(--brd-l); }
+        .cluster:last-of-type { border-bottom: none; }
+
+        .cl-title {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: var(--t3); padding: 14px 20px 6px;
         }
 
-        .status-banner.approved .status-icon { background: var(--color-approved); color: white; box-shadow: 0 0 0 5px var(--color-approved-ring); }
-        .status-banner.declined .status-icon { background: var(--color-declined); color: white; box-shadow: 0 0 0 5px var(--color-declined-ring); }
-        .status-banner.waiting  .status-icon { background: var(--color-waiting);  color: white; box-shadow: 0 0 0 5px var(--color-waiting-ring); }
-        .status-banner.loading  .status-icon { background: var(--brand-blue);     color: white; box-shadow: 0 0 0 5px #B8D4F0; }
-        .status-banner.error    .status-icon { background: var(--color-declined); color: white; box-shadow: 0 0 0 5px var(--color-declined-ring); }
-
-        .status-title { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
-        .status-subtitle { font-size: 12px; opacity: 0.8; font-weight: 500; }
-
-        /* ---- Amount ---- */
-        .amount-section { padding: 14px 28px; text-align: center; border-bottom: 1px solid var(--border); }
-        .amount-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 2px; }
-        .amount-value { font-size: 28px; font-weight: 700; color: var(--brand-navy); letter-spacing: -1px; }
-        .amount-value .currency { font-size: 16px; font-weight: 600; vertical-align: super; margin-right: 2px; opacity: 0.7; }
-
-        /* ---- Warning ---- */
-        .suspended-warning { margin: 0 14px; padding: 10px 12px; background: var(--color-waiting-bg); border: 1px solid var(--color-waiting-ring); border-radius: var(--radius-sm); display: flex; gap: 8px; align-items: flex-start; }
-        .suspended-warning .warn-icon { flex-shrink: 0; font-size: 13px; line-height: 1.4; }
-        .suspended-warning p { font-size: 11px; color: var(--color-waiting); font-weight: 500; line-height: 1.5; }
-
-        /* ---- Dynamic payload rows ---- */
-        .payload-section { padding: 6px 0; }
-
-        .payload-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 4px 20px;
-            gap: 12px;
-            min-height: 26px;
+        .row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 5px 20px; gap: 10px;
         }
-        .payload-row:hover { background: var(--surface-2); }
-
-        .payload-key {
-            font-size: 11.5px;
-            color: var(--text-secondary);
-            font-weight: 500;
-            flex-shrink: 0;
-            min-width: 140px;
-        }
-
-        .payload-val {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-align: right;
-            word-break: break-all;
+        .row:hover { background: var(--card-2); }
+        .rk { font-size: 11.5px; color: var(--t2); font-weight: 500; flex-shrink: 0; }
+        .rv {
+            font-size: 11px; font-weight: 600; color: var(--t1);
+            text-align: right; word-break: break-all;
             font-family: 'JetBrains Mono', monospace;
         }
+        .rv.txt { font-family: 'Inter', sans-serif; font-size: 11.5px; }
+        .rv.nil { color: var(--t3); font-style: italic; font-weight: 400; }
 
-        .payload-val.null-val {
-            color: var(--text-tertiary);
-            font-style: italic;
-            font-weight: 400;
+        /* Badges */
+        .b { display: inline-flex; padding: 2px 8px; border-radius: 5px; font-size: 10.5px; font-weight: 700; font-family: 'Inter',sans-serif; }
+        .b-blue { background: var(--fabrick-sky); color: var(--fabrick-blue); }
+        .b-ok   { background: var(--ok-bg); color: var(--ok); }
+        .b-ko   { background: var(--ko-bg); color: var(--ko); }
+        .b-wait { background: var(--wait-bg); color: var(--wait); }
+        .b-mute { background: var(--card-2); color: var(--t2); border: 1px solid var(--brd); }
+
+        /* Collapsible */
+        .cl-head {
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: space-between; padding: 14px 20px 6px; user-select: none;
+        }
+        .cl-head .chev { font-size: 10px; color: var(--t3); transition: transform .2s; }
+        .cl-head.open .chev { transform: rotate(180deg); }
+        .cl-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+        .cl-body.open { max-height: 1200px; }
+
+        /* Nested label */
+        .nest-label {
+            font-size: 9px; font-weight: 700; letter-spacing: .5px;
+            color: var(--fabrick-blue); text-transform: uppercase;
+            padding: 8px 20px 2px;
+            border-top: 1px dashed var(--brd-l);
         }
 
-        /* Nested object toggle */
-        .nested-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 20px;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.15s;
-        }
-        .nested-header:hover { background: var(--surface-2); }
-
-        .nested-header .nested-key {
-            font-size: 11.5px;
-            font-weight: 600;
-            color: var(--brand-navy);
-        }
-
-        .nested-header .nested-toggle {
-            font-size: 10px;
-            color: var(--text-tertiary);
-            transition: transform 0.2s;
-            flex-shrink: 0;
-        }
-        .nested-header.open .nested-toggle { transform: rotate(180deg); }
-
-        .nested-header .nested-tag {
-            font-size: 9.5px;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--text-tertiary);
-            margin-left: 6px;
-            font-weight: 400;
-        }
-
-        .nested-body {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            border-left: 2px solid var(--border-light);
-            margin-left: 20px;
-        }
-        .nested-body.open { max-height: 2000px; }
-
-        /* Null nested — shown inline */
-        .nested-null {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 20px;
-            gap: 12px;
-        }
-        .nested-null .payload-key { color: var(--text-secondary); font-weight: 500; }
-        .nested-null .payload-val { color: var(--text-tertiary); font-style: italic; font-weight: 400; }
-
-        /* Array items */
-        .array-item-header {
-            font-size: 9.5px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-tertiary);
-            padding: 6px 20px 2px;
-        }
-
-        .payload-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: 4px 20px;
-        }
-
-        /* Badges for special values */
-        .badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; font-weight: 600; font-family: 'DM Sans', sans-serif; }
-        .badge-blue { background: var(--brand-sky); color: var(--brand-blue); }
-        .badge-green { background: var(--color-approved-bg); color: var(--color-approved); }
-        .badge-red { background: var(--color-declined-bg); color: var(--color-declined); }
-        .badge-orange { background: var(--color-waiting-bg); color: var(--color-waiting); }
-
-        /* ---- Card footer ---- */
-        .card-footer {
+        /* ==== CARD FOOTER ==== */
+        .cfoot {
             padding: 12px 20px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-top: 1px solid var(--brd);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .card-footer p { font-size: 10.5px; color: var(--text-tertiary); line-height: 1.4; }
-        .card-footer .shop-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-tertiary); text-align: right; }
-        .card-footer .gh-link {
-            display: flex; align-items: center;
-            color: var(--text-tertiary); opacity: 0.35;
-            transition: opacity 0.2s; text-decoration: none;
-        }
-        .card-footer .gh-link:hover { opacity: 1; }
-        .card-footer .gh-link svg { width: 16px; height: 16px; }
+        .cfoot p { font-size: 10.5px; color: var(--t3); }
+        .cfoot-mid { display: flex; align-items: center; gap: 8px; }
+        .cfoot-mid a { display: flex; color: var(--t3); opacity: .35; transition: opacity .2s; }
+        .cfoot-mid a:hover { opacity: 1; }
+        .cfoot-mid a svg { width: 14px; height: 14px; }
+        .cfoot-mid .cdot { width: 3px; height: 3px; border-radius: 50%; background: var(--t3); opacity: .4; }
+        .cfoot .sid { font-family: 'JetBrains Mono',monospace; font-size: 10px; color: var(--t3); text-align: right; }
 
-        /* ---- JSON back view ---- */
-        .json-view-header {
-            padding: 12px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            background: #1e2235;
-            display: flex;
-            align-items: center;
-        }
-        .json-view-header h3 {
-            font-size: 11px;
-            font-weight: 600;
-            color: #7a8599;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
+        /* ==== JSON BACK ==== */
+        .jhead { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.06); background: #1c2033; display: flex; align-items: center; }
+        .jhead h3 { font-size: 10px; font-weight: 700; color: #64748B; letter-spacing: .8px; text-transform: uppercase; }
+        .jbody { flex: 1; overflow: auto; padding: 14px 18px; background: #151826; }
+        .jbody pre { font-family: 'JetBrains Mono',monospace; font-size: 10.5px; line-height: 1.65; color: #CBD5E1; white-space: pre-wrap; word-break: break-all; }
+        .jk { color: #7DD3FC; } .js { color: #86EFAC; } .jn { color: #FDE047; } .jb { color: #C084FC; } .jnl { color: #64748B; font-style: italic; }
 
-        .json-view-body {
-            flex: 1;
-            overflow: auto;
-            padding: 14px 18px;
-            background: #171b2b;
-        }
-        .json-view-body pre {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10.5px;
-            line-height: 1.6;
-            color: #c8d3e0;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .json-key { color: #7dd3fc; }
-        .json-str { color: #86efac; }
-        .json-num { color: #fbbf24; }
-        .json-bool { color: #c084fc; }
-        .json-null { color: #9ca3af; font-style: italic; }
-
-        /* ---- Animations ---- */
-        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        /* ==== ANIMATIONS ==== */
+        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
         .pulse { animation: pulse 2s ease-in-out infinite; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .card-front { animation: fadeUp 0.4s ease-out; }
+        @keyframes up { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+        .face:first-child { animation: up .45s ease-out; }
 
-        /* ---- Responsive ---- */
-        @media (max-width: 600px) {
+        @media(max-width:600px) {
             body { padding: 16px 10px 32px; }
-            .payload-key { min-width: 100px; }
-            .card-footer { flex-direction: column; gap: 4px; text-align: center; }
+            .cfoot { flex-direction: column; gap: 6px; text-align: center; }
         }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <div class="card-wrapper">
-
-            <!-- Front action buttons -->
-            <div class="card-actions" id="frontActions">
-                <button class="card-btn" id="btnRefresh" title="Refresh" onclick="refreshDetail()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
-                        <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-                    </svg>
-                </button>
-                <button class="card-btn" id="btnJson" title="View raw JSON" onclick="flipToJson()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                    </svg>
-                </button>
+<div class="container">
+    <div class="card-wrap">
+        <div class="ghost-bar" id="gFront">
+            <button class="ghost" id="btnR" title="Refresh" onclick="doRefresh()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>
+            </button>
+            <button class="ghost" title="View raw JSON" onclick="toJson()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </button>
+        </div>
+        <div class="flipper" id="flip">
+            <div class="face" id="front">
+                <div class="banner load" id="ban">
+                    <div class="sicon"><div class="spinner"></div></div>
+                    <div class="stitle">Loading payment details…</div>
+                    <div class="ssub">Retrieving transaction information</div>
+                </div>
+                <div id="body"></div>
             </div>
-
-            <div class="card-flipper" id="cardFlipper">
-                <!-- FRONT -->
-                <div class="card-front" id="cardFront">
-                    <div class="status-banner loading" id="statusBanner">
-                        <div class="status-icon"><div class="spinner"></div></div>
-                        <div class="status-title">Loading payment details…</div>
-                        <div class="status-subtitle">Retrieving transaction information</div>
-                    </div>
-                    <div id="cardBody"></div>
+            <div class="face face-back" id="back">
+                <div class="ghost-bar" style="position:absolute;">
+                    <button class="ghost ghost-dark" title="Refresh" onclick="doRefresh()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>
+                    </button>
+                    <button class="ghost ghost-dark" title="Back to details" onclick="toFront()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    </button>
                 </div>
-
-                <!-- BACK — Raw JSON -->
-                <div class="card-back" id="cardBack">
-                    <!-- Back action buttons (inside the back card) -->
-                    <div class="card-back-actions">
-                        <button class="card-btn-back" title="Refresh" onclick="refreshDetail()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
-                                <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-                            </svg>
-                        </button>
-                        <button class="card-btn-back" title="Back to details" onclick="flipToFront()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="json-view-header">
-                        <h3>Raw API Response</h3>
-                    </div>
-                    <div class="json-view-body">
-                        <pre id="jsonContent">No data yet.</pre>
-                    </div>
-                </div>
+                <div class="jhead"><h3>Raw API Response</h3></div>
+                <div class="jbody"><pre id="jraw">No data yet.</pre></div>
             </div>
         </div>
-
     </div>
+</div>
 
-    <script>
-        /**
-         * =====================================================================
-         * PAYMENT RESULT PAGE — M2NDLAB
-         * =====================================================================
-         *
-         * Renderer dinamico: itera le chiavi del payload JSON così come arrivano.
-         * - Valori primitivi (string, number, boolean) → riga key/value
-         * - null → riga con "null" in corsivo
-         * - Oggetti annidati → sezione espandibile/collassabile
-         * - Array → sezione espandibile con item numerati
-         * - Annidamenti ricorsivi supportati a qualsiasi profondità
-         *
-         * Non c'è raggruppamento manuale: la struttura riflette il JSON.
-         * =====================================================================
+<script>
+/* =================================================================
+   M2NDLAB — PAYMENT RESULT PAGE
+   Clustered layout, all fields mapped, "Other" catchall.
+   Fabrick brand. Sandbox only.
+   ================================================================= */
+
+const P = new URLSearchParams(window.location.search);
+function gp(n){const e=P.get(n);if(e!==null)return e;const l=n.toLowerCase();for(const[k,v]of P.entries())if(k.toLowerCase()===l)return v;return '';}
+const SL=gp('a'), US=gp('Status'), PID=gp('paymentID'), PT=gp('paymentToken');
+const API='https://sandbox.gestpay.net/api';
+
+let rawJson=null;
+
+/* ---- Flip ---- */
+function toJson(){document.getElementById('flip').classList.add('flipped');document.getElementById('gFront').style.display='none';}
+function toFront(){document.getElementById('flip').classList.remove('flipped');document.getElementById('gFront').style.display='flex';}
+async function doRefresh(){const b=document.getElementById('btnR');b.classList.add('spin');toFront();await load();b.classList.remove('spin');}
+
+/* ---- JSON highlight ---- */
+function hl(j){return JSON.stringify(j,null,2).replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,m=>{let c='jn';if(/^"/.test(m))c=/:$/.test(m)?'jk':'js';else if(/true|false/.test(m))c='jb';else if(/null/.test(m))c='jnl';return`<span class="${c}">${m}</span>`;});}
+function setJson(d){rawJson=d;document.getElementById('jraw').innerHTML=d?hl(d):'No data.';}
+
+/* ---- Status config ---- */
+function sc(r){
+    const u=(r||'').toUpperCase();
+    if(u==='APPROVED'||u==='OK')return{t:'ok',i:'✓',h:'Payment Approved',s:'Transaction successfully processed'};
+    if(u==='DECLINED'||u==='KO')return{t:'ko',i:'✕',h:'Payment Declined',s:'The transaction could not be completed'};
+    if(['PENDING','WAITING','UNSUBMITTED','XX'].includes(u)){
+        const m={PENDING:'Awaiting confirmation from payment provider',WAITING:'Payment is still being processed',UNSUBMITTED:'Payment has not been submitted yet',XX:'Status is not yet final'};
+        return{t:'wait',i:'⏳',h:'Payment Pending',s:m[u]||'Awaiting confirmation',warn:true};
+    }
+    return{t:'ko',i:'?',h:'Unknown Status',s:`Result: ${r||'N/A'}`};
+}
+
+/* ---- Helpers ---- */
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function v(x){return(x!==null&&x!==undefined&&x!=='')?x:null;}
+function fmtAmt(a){const n=parseFloat(a);return isNaN(n)?null:n;}
+function cur(c){return{EUR:'€',USD:'$',GBP:'£',CHF:'CHF'}[(c||'').toUpperCase()]||c||'€';}
+function evtLabel(t){return{AUT:'Authorization',MOV:'Settlement',CAN:'Cancellation',STO:'Refund',PRE:'Pre-Auth'}[(t||'').toUpperCase()]||t||'—';}
+function stLabel(s){return{AUT:'Authorized',MOV:'Settled',CAN:'Cancelled',STO:'Refunded',PRE:'Pre-Authorized',WAITAUT:'Waiting Auth'}[(s||'').toUpperCase()]||s||'—';}
+function tdsLabel(s){return{Y:'Authenticated',N:'Not Authenticated',A:'Attempted',U:'Unavailable',R:'Rejected',C:'Challenge'}[s]||s||'—';}
+
+function R(k,val,isBadge){
+    if(isBadge)return`<div class="row"><span class="rk">${k}</span><span class="rv">${val}</span></div>`;
+    if(val===null||val===undefined||val==='')return`<div class="row"><span class="rk">${k}</span><span class="rv nil">—</span></div>`;
+    return`<div class="row"><span class="rk">${k}</span><span class="rv">${esc(String(val))}</span></div>`;
+}
+function Rt(k,val){
+    if(val===null||val===undefined||val==='')return`<div class="row"><span class="rk">${k}</span><span class="rv txt nil">—</span></div>`;
+    return`<div class="row"><span class="rk">${k}</span><span class="rv txt">${esc(String(val))}</span></div>`;
+}
+function badge(t,c){return`<span class="b b-${c}">${t}</span>`;}
+function resBadge(r){const u=(r||'').toUpperCase();if(u==='APPROVED')return badge(r,'ok');if(u==='DECLINED')return badge(r,'ko');return badge(r||'—','wait');}
+function toggle(h){h.classList.toggle('open');h.nextElementSibling.classList.toggle('open');}
+
+/* GitHub icon */
+const ghSvg=`<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+/* Status page icon (signal/pulse) */
+const spSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
+
+function footer(leftHtml, rightHtml){
+    return`<div class="cfoot">
+        <p>${leftHtml}</p>
+        <div class="cfoot-mid">
+            <a href="https://github.com/M2NDLAB/checkout-page" target="_blank" title="GitHub">${ghSvg}</a>
+            <span class="cdot"></span>
+            <a href="https://status.fabrick.com/" target="_blank" title="Fabrick Status">${spSvg}</a>
+        </div>
+        <div>${rightHtml}</div>
+    </div>`;
+}
+
+/* ==== RENDER CARD ==== */
+function renderCard(p){
+    const ban=document.getElementById('ban'), bd=document.getElementById('body');
+    const cfg=sc(p.transactionResult);
+    const c=cur(p.currency);
+
+    ban.className=`banner ${cfg.t}`;
+    ban.innerHTML=`<div class="sicon">${cfg.i}</div><div class="stitle">${cfg.h}</div><div class="ssub">${cfg.s}</div>`;
+    if(cfg.t==='wait')ban.querySelector('.sicon').classList.add('pulse');
+
+    let h='';
+
+    /* Warning */
+    if(cfg.warn)h+=`<div class="warn-box"><span style="flex-shrink:0">⚠</span><p><strong>Do not fulfill this order yet.</strong><br>The outcome is not final. A S2S notification will confirm the result.</p></div>`;
+
+    /* Amount */
+    const amt=fmtAmt(p.events?.[0]?.event?.eventamount);
+    if(amt!==null){
+        const parts=amt.toFixed(2).split('.');
+        const intPart=parseInt(parts[0]).toLocaleString('en-US');
+        h+=`<div class="amt-bar"><span class="cur">${c}</span><span class="num">${intPart}</span><span class="dec">.${parts[1]}</span><span class="cur-code">${v(p.currency)||''}</span></div>`;
+    }
+
+    /* ---- CLUSTER: Transaction ---- */
+    h+=`<div class="cluster"><div class="cl-title">Transaction</div>`;
+    h+=R('transactionType', v(p.transactionType));
+    h+=R('transactionResult', resBadge(p.transactionResult), true);
+    h+=Rt('transactionState', v(p.transactionState)?stLabel(p.transactionState):null);
+    h+=R('transactionErrorCode', v(p.transactionErrorCode));
+    h+=Rt('transactionErrorDescription', v(p.transactionErrorDescription));
+    h+=R('bankTransactionID', v(p.bankTransactionID));
+    h+=R('authorizationCode', v(p.authorizationCode));
+    h+=R('paymentID', v(p.paymentID));
+    h+=`</div>`;
+
+    /* ---- CLUSTER: Order ---- */
+    h+=`<div class="cluster"><div class="cl-title">Order</div>`;
+    h+=R('shopTransactionID', v(p.shopTransactionID));
+    h+=R('shopTransactionID_2', v(p.shopTransactionID_2));
+    h+=Rt('currency', v(p.currency));
+    h+=Rt('country', v(p.country));
+    h+=`</div>`;
+
+    /* ---- CLUSTER: Payment Method ---- */
+    h+=`<div class="cluster"><div class="cl-title">Payment Method</div>`;
+    h+=v(p.paymentMethod)?R('paymentMethod',badge(p.paymentMethod,'blue'),true):R('paymentMethod',null);
+    h+=Rt('company', v(p.company));
+    h+=Rt('productType', v(p.productType));
+    h+=R('maskedPAN', v(p.maskedPAN));
+    h+=Rt('cvvPresent', v(p.cvvPresent));
+    h+=R('tdLevel', v(p.tdLevel));
+    h+=`</div>`;
+
+    /* ---- CLUSTER: Token (collapsible) ---- */
+    h+=`<div class="cluster">`;
+    h+=`<div class="cl-head" onclick="toggle(this)"><span class="cl-title" style="padding:0">Token & Card</span><span class="chev">▼</span></div>`;
+    h+=`<div class="cl-body">`;
+    h+=R('token', v(p.token));
+    h+=R('tokenExpiryMonth', v(p.tokenExpiryMonth));
+    h+=R('tokenExpiryYear', v(p.tokenExpiryYear));
+    if(p.tokenDetails){
+        h+=`<div class="nest-label">tokenDetails</div>`;
+        h+=R('TokenValue', v(p.tokenDetails.TokenValue));
+        h+=R('TokenExpiryMonth', v(p.tokenDetails.TokenExpiryMonth));
+        h+=R('TokenExpiryYear', v(p.tokenDetails.TokenExpiryYear));
+        h+=Rt('TokenProvider', v(p.tokenDetails.TokenProvider));
+        if(p.tokenDetails.CardDetails){
+            h+=`<div class="nest-label">CardDetails</div>`;
+            const cd=p.tokenDetails.CardDetails;
+            h+=R('CardSuffix', v(cd.CardSuffix));
+            h+=R('CardExpiryMonth', v(cd.CardExpiryMonth));
+            h+=R('CardExpiryYear', v(cd.CardExpiryYear));
+            h+=Rt('CardHolderName', v(cd.CardHolderName));
+        }
+        if(p.tokenDetails.CardAssets){
+            h+=`<div class="nest-label">CardAssets</div>`;
+            const ca=p.tokenDetails.CardAssets;
+            ['CardArt','BrandLogo'].forEach(k=>{
+                if(ca[k]){
+                    h+=`<div class="nest-label" style="border:none;padding-top:4px">${k}</div>`;
+                    Object.keys(ca[k]).forEach(sk=>h+=Rt(sk, v(ca[k][sk])));
+                }
+            });
+        }
+    } else { h+=Rt('tokenDetails','null'); }
+    h+=`</div></div>`;
+
+    /* ---- CLUSTER: 3D Secure (collapsible) ---- */
+    h+=`<div class="cluster">`;
+    h+=`<div class="cl-head" onclick="toggle(this)"><span class="cl-title" style="padding:0">3D Secure</span><span class="chev">▼</span></div>`;
+    h+=`<div class="cl-body">`;
+    if(p.threeDS){
+        if(p.threeDS.authenticationResult){
+            h+=`<div class="nest-label">authenticationResult</div>`;
+            const ar=p.threeDS.authenticationResult;
+            Object.keys(ar).forEach(k=>{
+                if(k==='authenticationStatus'&&v(ar[k]))h+=R(k, badge(tdsLabel(ar[k]), ar[k]==='Y'?'ok':'wait'), true);
+                else h+=R(k, v(ar[k]));
+            });
+        } else { h+=Rt('authenticationResult','null'); }
+        if(p.threeDS.transDetails){
+            h+=`<div class="nest-label">transDetails</div>`;
+            Object.keys(p.threeDS.transDetails).forEach(k=>h+=R(k, v(p.threeDS.transDetails[k])));
+        } else { h+=Rt('transDetails','null'); }
+    } else { h+=Rt('threeDS','null'); }
+    h+=`</div></div>`;
+
+    /* ---- CLUSTER: Events (collapsible) ---- */
+    h+=`<div class="cluster">`;
+    h+=`<div class="cl-head" onclick="toggle(this)"><span class="cl-title" style="padding:0">Events${p.events?' ('+p.events.length+')':''}</span><span class="chev">▼</span></div>`;
+    h+=`<div class="cl-body">`;
+    if(p.events&&p.events.length){
+        p.events.forEach((ev,i)=>{
+            const e=ev.event;
+            h+=`<div class="nest-label">event[${i}]</div>`;
+            Object.keys(e).forEach(k=>h+=R(k, v(e[k])));
+        });
+    } else { h+=Rt('events','null'); }
+    h+=`</div></div>`;
+
+    /* ---- CLUSTER: Buyer & Risk ---- */
+    h+=`<div class="cluster"><div class="cl-title">Buyer & Risk</div>`;
+    if(p.buyer){
+        Object.keys(p.buyer).forEach(k=>h+=Rt(k, v(p.buyer[k])));
+    } else { h+=Rt('buyer','null'); }
+    if(p.risk){
+        h+=`<div class="nest-label">risk</div>`;
+        Object.keys(p.risk).forEach(k=>h+=Rt(k, v(p.risk[k])));
+    } else { h+=Rt('risk','null'); }
+    h+=`</div>`;
+
+    /* ---- CLUSTER: Fraud & Automation ---- */
+    h+=`<div class="cluster"><div class="cl-title">Fraud & Automation</div>`;
+    if(p.fraudPrevention){
+        h+=`<div class="nest-label">fraudPrevention</div>`;
+        Object.keys(p.fraudPrevention).forEach(k=>h+=Rt(k, v(p.fraudPrevention[k])));
+    } else { h+=Rt('fraudPrevention','null'); }
+    if(p.automaticOperation){
+        h+=`<div class="nest-label">automaticOperation</div>`;
+        const ao=p.automaticOperation;
+        h+=Rt('type', v(ao.type)?evtLabel(ao.type):null);
+        h+=Rt('date', v(ao.date));
+        h+=R('amount', v(ao.amount)?`${c} ${fmtAmt(ao.amount)?.toFixed(2)}`:null);
+    } else { h+=Rt('automaticOperation','null'); }
+    h+=`</div>`;
+
+    /* ---- CLUSTER: Other (catchall) ---- */
+    const mapped=new Set([
+        'transactionType','transactionResult','transactionState','transactionErrorCode',
+        'transactionErrorDescription','bankTransactionID','authorizationCode','paymentID',
+        'shopTransactionID','shopTransactionID_2','currency','country',
+        'paymentMethod','company','productType','maskedPAN','cvvPresent','tdLevel',
+        'token','tokenExpiryMonth','tokenExpiryYear','tokenDetails',
+        'threeDS','events','buyer','risk','fraudPrevention','automaticOperation'
+    ]);
+    const others=Object.keys(p).filter(k=>!mapped.has(k));
+    if(others.length){
+        h+=`<div class="cluster"><div class="cl-title">Other</div>`;
+        others.forEach(k=>{
+            const val=p[k];
+            if(val!==null&&typeof val==='object'){
+                h+=Rt(k, JSON.stringify(val));
+            } else {
+                h+=Rt(k, v(val));
+            }
+        });
+        h+=`</div>`;
+    }
+
+    h+=footer('Processed by <strong>M2NDLAB</strong> via Fabrick',`<div class="sid">ShopLogin: ${SL||'—'}</div><div class="sid" style="color:var(--wait);margin-top:1px;">⚠ SANDBOX</div>`);
+    bd.innerHTML=h;
+}
+
+/* ==== RENDER ERROR ==== */
+function renderErr(title,detail,errPayload){
+    const ban=document.getElementById('ban'), bd=document.getElementById('body');
+    ban.className='banner err';
+    ban.innerHTML=`<div class="sicon">!</div><div class="stitle">${esc(title)}</div><div class="ssub">${esc(detail||'')}</div>`;
+    let h='';
+    if(US.toUpperCase()==='XX')h+=`<div class="warn-box"><span>⚠</span><p><strong>Do not fulfill this order yet.</strong><br>URL Status is XX (suspended).</p></div>`;
+
+    /* Se c'è un errore applicativo Axerve, mostralo */
+    if(errPayload?.error){
+        h+=`<div class="cluster"><div class="cl-title">API Error</div>`;
+        h+=R('code', v(errPayload.error.code));
+        h+=Rt('description', v(errPayload.error.description));
+        h+=`</div>`;
+    }
+
+    h+=`<div class="cluster"><div class="cl-title">Request Info</div>`;
+    h+=R('shopLogin', SL);
+    h+=Rt('urlStatus', US);
+    h+=R('paymentID', PID);
+    h+=Rt('environment', 'Sandbox');
+    h+=`</div>`;
+    h+=footer('Could not retrieve transaction details.',`<div class="sid">ShopLogin: ${SL||'—'}</div>`);
+    bd.innerHTML=h;
+}
+
+function renderMissing(){
+    const ban=document.getElementById('ban'), bd=document.getElementById('body');
+    ban.className='banner err';
+    ban.innerHTML=`<div class="sicon">!</div><div class="stitle">Missing Parameters</div><div class="ssub">Required URL parameters not found</div>`;
+    bd.innerHTML=`<div style="padding:18px"><p style="font-size:12px;color:var(--t2);line-height:1.6;">This page requires URL parameters:<code style="display:block;margin-top:8px;padding:10px;background:var(--card-2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;word-break:break-all;">?a=SHOPLOGIN&Status=OK&paymentID=123&paymentToken=abc-def</code></p></div>`+footer('Processed by <strong>M2NDLAB</strong> via Fabrick','<p>Redirected here by mistake?</p>');
+}
+
+/* ==== FETCH ==== */
+async function load(){
+    if(!PID||!PT){renderMissing();return;}
+    const ban=document.getElementById('ban');
+    ban.className='banner load';
+    ban.innerHTML=`<div class="sicon"><div class="spinner"></div></div><div class="stitle">Loading…</div><div class="ssub">Retrieving transaction</div>`;
+    document.getElementById('body').innerHTML='';
+
+    try{
+        const res=await fetch(`${API}/v1/payment/detail/${PID}`,{method:'GET',headers:{'Content-Type':'application/json','PaymentToken':PT}});
+
+        /*
+         * IMPORTANTE: anche se res.ok è false (es. 400 Bad Request),
+         * il body della risposta Axerve contiene il JSON con error.code
+         * e error.description (es. "1457 - Expired paymentToken").
+         * Quindi leggiamo SEMPRE il body prima di decidere cosa fare.
          */
+        let data;
+        try { data=await res.json(); } catch(e) { data=null; }
+        setJson(data||{httpStatus:res.status,statusText:res.statusText});
 
-        const params = new URLSearchParams(window.location.search);
-
-        /**
-         * Lettura case-insensitive dei query params.
-         *
-         * Perché serve: URLSearchParams.get() è case-sensitive, ma le URL
-         * di redirect Axerve arrivano con casing inconsistente tra ambienti
-         * e configurazioni. Esempi reali osservati:
-         *   - Status vs status
-         *   - paymentID vs paymentId vs paymentid
-         *   - paymentToken vs paymenttoken
-         *
-         * Questa funzione normalizza tutto a lowercase per il confronto.
-         */
-        function getParam(name) {
-            // Prima prova esatta (fast path)
-            const exact = params.get(name);
-            if (exact !== null) return exact;
-            // Fallback: cerca case-insensitive
-            const lower = name.toLowerCase();
-            for (const [key, value] of params.entries()) {
-                if (key.toLowerCase() === lower) return value;
-            }
-            return '';
+        if(!res.ok){
+            renderErr('API Error',`HTTP ${res.status} — ${res.statusText}`,data);
+            return;
         }
-
-        const shopLogin    = getParam('a');
-        const urlStatus    = getParam('Status');
-        const paymentID    = getParam('paymentID');
-        const paymentToken = getParam('paymentToken');
-
-        const apiBase = 'https://sandbox.gestpay.net/api';
-
-        let lastRawResponse = null;
-
-        // ==================================================================
-        // FLIP
-        // ==================================================================
-
-        function flipToJson() {
-            document.getElementById('cardFlipper').classList.add('flipped');
-            document.getElementById('frontActions').style.display = 'none';
+        if(data.error&&data.error.code!=='0'){
+            renderErr('Transaction Error',`[${data.error.code}] ${data.error.description}`,data);
+            return;
         }
-        function flipToFront() {
-            document.getElementById('cardFlipper').classList.remove('flipped');
-            document.getElementById('frontActions').style.display = 'flex';
-        }
+        if(!data.payload){renderErr('Unexpected Response','No payload in API response',data);return;}
+        renderCard(data.payload);
+    }catch(err){
+        setJson({error:err.message});
+        renderErr('Connection Error',`Unable to reach gateway. ${err.message||''}`,null);
+    }
+}
 
-        // ==================================================================
-        // JSON SYNTAX HIGHLIGHT
-        // ==================================================================
-
-        function syntaxHighlight(json) {
-            return JSON.stringify(json, null, 2).replace(
-                /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-                (m) => {
-                    let c = 'json-num';
-                    if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-str';
-                    else if (/true|false/.test(m)) c = 'json-bool';
-                    else if (/null/.test(m)) c = 'json-null';
-                    return `<span class="${c}">${m}</span>`;
-                }
-            );
-        }
-
-        function updateJsonView(data) {
-            lastRawResponse = data;
-            document.getElementById('jsonContent').innerHTML = data ? syntaxHighlight(data) : 'No data available.';
-        }
-
-        async function refreshDetail() {
-            const btn = document.getElementById('btnRefresh');
-            btn.classList.add('spinning');
-            document.getElementById('cardFlipper').classList.remove('flipped');
-            document.getElementById('frontActions').style.display = 'flex';
-            await fetchPaymentDetail();
-            btn.classList.remove('spinning');
-        }
-
-        // ==================================================================
-        // STATUS CONFIG
-        // ==================================================================
-
-        function getStatusConfig(result) {
-            const r = (result || '').toUpperCase();
-            if (r === 'APPROVED' || r === 'OK')
-                return { theme: 'approved', icon: '✓', title: 'Payment Approved', subtitle: 'Your transaction has been successfully processed' };
-            if (r === 'DECLINED' || r === 'KO')
-                return { theme: 'declined', icon: '✕', title: 'Payment Declined', subtitle: 'The transaction could not be completed' };
-            if (['PENDING','WAITING','UNSUBMITTED','XX'].includes(r)) {
-                const sub = { PENDING:'Awaiting confirmation from the payment provider', WAITING:'The payment is still being processed', UNSUBMITTED:'The payment has not been submitted yet', XX:'The payment status is not yet final' };
-                return { theme: 'waiting', icon: '⏳', title: 'Payment Pending', subtitle: sub[r]||'Awaiting confirmation', showSuspendedWarning: true };
-            }
-            return { theme: 'declined', icon: '?', title: 'Unknown Status', subtitle: `Transaction result: ${result||'N/A'}` };
-        }
-
-        // ==================================================================
-        // HELPERS
-        // ==================================================================
-
-        function currencySymbol(c) { return {EUR:'€',USD:'$',GBP:'£',CHF:'CHF'}[(c||'').toUpperCase()]||c||'€'; }
-
-        /** Reusable GitHub SVG */
-        const ghIcon = `<a class="gh-link" href="https://github.com/M2NDLAB/checkout-page" target="_blank" rel="noopener noreferrer" title="View on GitHub"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>`;
-        function formatAmount(a) { const n=parseFloat(a); return isNaN(n)?a||'—':n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-
-        /**
-         * Determina se un valore merita un badge colorato.
-         * Applica badge solo a pochi campi semanticamente rilevanti
-         * per dare feedback visivo immediato.
-         */
-        function maybeFormatValue(key, value) {
-            if (value === null || value === undefined) return '<span class="payload-val null-val">null</span>';
-            if (value === '') return '<span class="payload-val null-val">—</span>';
-
-            const s = String(value);
-            const k = key.toLowerCase();
-
-            // transactionResult
-            if (k === 'transactionresult') {
-                const v = s.toUpperCase();
-                if (v === 'APPROVED') return `<span class="badge badge-green">${s}</span>`;
-                if (v === 'DECLINED') return `<span class="badge badge-red">${s}</span>`;
-                return `<span class="badge badge-orange">${s}</span>`;
-            }
-            // paymentMethod / company
-            if (k === 'paymentmethod' || k === 'company') {
-                return `<span class="badge badge-blue">${s}</span>`;
-            }
-            // boolean-like
-            if (s === 'TRUE') return `<span class="badge badge-green">TRUE</span>`;
-            if (s === 'FALSE') return `<span class="badge badge-orange">FALSE</span>`;
-
-            // default: monospace value
-            return `<span class="payload-val">${escapeHtml(s)}</span>`;
-        }
-
-        function escapeHtml(s) {
-            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-
-        // ==================================================================
-        // DYNAMIC RENDERER — walks JSON keys as they are
-        // ==================================================================
-
-        /**
-         * Genera l'HTML per un oggetto, iterando le chiavi nell'ordine originale.
-         * 
-         * - Primitivi → riga key/value
-         * - null → riga con "null"
-         * - Oggetti → sezione collassabile (ricorsiva)
-         * - Array → sezione collassabile con item (se array di oggetti, 
-         *           ogni item è una sotto-sezione)
-         *
-         * @param {Object} obj        - L'oggetto da renderizzare
-         * @param {string} idPrefix   - Prefisso per gli ID (per espansione unica)
-         * @returns {string} HTML
-         */
-        function renderObject(obj, idPrefix = 'p') {
-            if (!obj || typeof obj !== 'object') return '';
-
-            let html = '';
-            const keys = Object.keys(obj);
-
-            for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
-                const val = obj[key];
-                const uid = `${idPrefix}_${key}`;
-
-                if (val === null || val === undefined) {
-                    // null → inline row
-                    html += `<div class="payload-row">
-                        <span class="payload-key">${key}</span>
-                        <span class="payload-val null-val">null</span>
-                    </div>`;
-                }
-                else if (Array.isArray(val)) {
-                    // Array → collapsible
-                    if (val.length === 0) {
-                        html += `<div class="payload-row">
-                            <span class="payload-key">${key}</span>
-                            <span class="payload-val null-val">[ ] (empty)</span>
-                        </div>`;
-                    } else {
-                        html += `<div class="nested-header" onclick="toggleNested('${uid}', this)">
-                            <div><span class="nested-key">${key}</span><span class="nested-tag">Array[${val.length}]</span></div>
-                            <span class="nested-toggle">▼</span>
-                        </div>`;
-                        html += `<div class="nested-body" id="${uid}">`;
-                        val.forEach((item, idx) => {
-                            if (item !== null && typeof item === 'object') {
-                                html += `<div class="array-item-header">[${idx}]</div>`;
-                                html += renderObject(item, `${uid}_${idx}`);
-                            } else {
-                                html += `<div class="payload-row">
-                                    <span class="payload-key">[${idx}]</span>
-                                    ${maybeFormatValue(key, item)}
-                                </div>`;
-                            }
-                        });
-                        html += `</div>`;
-                    }
-                }
-                else if (typeof val === 'object') {
-                    // Nested object → collapsible
-                    const childKeys = Object.keys(val);
-                    html += `<div class="nested-header" onclick="toggleNested('${uid}', this)">
-                        <div><span class="nested-key">${key}</span><span class="nested-tag">{${childKeys.length}}</span></div>
-                        <span class="nested-toggle">▼</span>
-                    </div>`;
-                    html += `<div class="nested-body" id="${uid}">`;
-                    html += renderObject(val, uid);
-                    html += `</div>`;
-                }
-                else {
-                    // Primitive → key/value row
-                    html += `<div class="payload-row">
-                        <span class="payload-key">${key}</span>
-                        ${maybeFormatValue(key, val)}
-                    </div>`;
-                }
-            }
-
-            return html;
-        }
-
-        function toggleNested(id, header) {
-            const body = document.getElementById(id);
-            if (!body) return;
-            header.classList.toggle('open');
-            body.classList.toggle('open');
-        }
-
-        // ==================================================================
-        // RENDER CARD
-        // ==================================================================
-
-        function renderCard(payload) {
-            const banner = document.getElementById('statusBanner');
-            const body   = document.getElementById('cardBody');
-            const cfg    = getStatusConfig(payload.transactionResult);
-
-            // Banner
-            banner.className = `status-banner ${cfg.theme}`;
-            banner.innerHTML = `<div class="status-icon">${cfg.icon}</div><div class="status-title">${cfg.title}</div><div class="status-subtitle">${cfg.subtitle}</div>`;
-            if (cfg.theme === 'waiting') banner.querySelector('.status-icon').classList.add('pulse');
-
-            let html = '';
-
-            // Warning per stato sospeso
-            if (cfg.showSuspendedWarning) {
-                html += `<div class="suspended-warning" style="margin:12px 14px 0;">
-                    <span class="warn-icon">⚠</span>
-                    <p><strong>Do not fulfill this order yet.</strong><br>
-                    The payment outcome is not final. A S2S notification will confirm the definitive result.</p>
-                </div>`;
-            }
-
-            // Amount (dal primo evento se presente)
-            const amt = payload.events?.[0]?.event?.eventamount;
-            const curr = currencySymbol(payload.currency);
-            if (amt && parseFloat(amt) > 0) {
-                html += `<div class="amount-section">
-                    <div class="amount-label">Total Amount</div>
-                    <div class="amount-value"><span class="currency">${curr}</span>${formatAmount(amt)}</div>
-                </div>`;
-            }
-
-            // Dynamic payload rendering
-            html += `<div class="payload-section">`;
-            html += renderObject(payload, 'payload');
-            html += `</div>`;
-
-            // Footer
-            html += `<div class="card-footer">
-                <p>Processed by <strong>M2NDLAB</strong> via Fabrick</p>
-                ${ghIcon}
-                <div>
-                    <div class="shop-id">ShopLogin: ${shopLogin || '—'}</div>
-                    <div class="shop-id" style="color:var(--color-waiting);margin-top:2px;">⚠ SANDBOX</div>
-                </div>
-            </div>`;
-
-            body.innerHTML = html;
-        }
-
-        // ==================================================================
-        // RENDER ERROR
-        // ==================================================================
-
-        function renderError(message, detail) {
-            const banner = document.getElementById('statusBanner');
-            const body   = document.getElementById('cardBody');
-
-            banner.className = 'status-banner error';
-            banner.innerHTML = `<div class="status-icon">!</div><div class="status-title">${message}</div><div class="status-subtitle">${detail||''}</div>`;
-
-            let html = '';
-            if (urlStatus.toUpperCase() === 'XX') {
-                html += `<div class="suspended-warning" style="margin:12px 14px 0;">
-                    <span class="warn-icon">⚠</span>
-                    <p><strong>Do not fulfill this order yet.</strong><br>
-                    URL Status is XX (suspended). The final outcome will arrive via S2S notification.</p>
-                </div>`;
-            }
-
-            html += `<div class="payload-section">`;
-            html += `<div class="payload-row"><span class="payload-key">shopLogin</span><span class="payload-val">${escapeHtml(shopLogin||'—')}</span></div>`;
-            html += `<div class="payload-row"><span class="payload-key">urlStatus</span><span class="payload-val">${escapeHtml(urlStatus||'—')}</span></div>`;
-            html += `<div class="payload-row"><span class="payload-key">paymentID</span><span class="payload-val">${escapeHtml(paymentID||'—')}</span></div>`;
-            html += `<div class="payload-row"><span class="payload-key">environment</span><span class="payload-val">Sandbox</span></div>`;
-            html += `</div>`;
-
-            html += `<div class="card-footer">
-                <p>Could not retrieve full transaction details.</p>
-                ${ghIcon}
-                <div class="shop-id">ShopLogin: ${shopLogin||'—'}</div>
-            </div>`;
-
-            body.innerHTML = html;
-        }
-
-        function renderMissingParams() {
-            const banner = document.getElementById('statusBanner');
-            const body   = document.getElementById('cardBody');
-            banner.className = 'status-banner error';
-            banner.innerHTML = `<div class="status-icon">!</div><div class="status-title">Missing Parameters</div><div class="status-subtitle">Required URL parameters not found</div>`;
-            body.innerHTML = `<div style="padding:18px;">
-                <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
-                    This page requires URL parameters:
-                    <code style="display:block;margin-top:8px;padding:10px;background:var(--surface-2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;word-break:break-all;">
-                        ?a=SHOPLOGIN&Status=OK&paymentID=123&paymentToken=abc-def
-                    </code>
-                </p>
-            </div>
-            <div class="card-footer"><p>Processed by <strong>M2NDLAB</strong> via Fabrick</p>${ghIcon}<p>You were probably redirected here by mistake.</p></div>`;
-        }
-
-        // ==================================================================
-        // FETCH
-        // ==================================================================
-
-        async function fetchPaymentDetail() {
-            if (!paymentID || !paymentToken) { renderMissingParams(); return; }
-
-            const banner = document.getElementById('statusBanner');
-            banner.className = 'status-banner loading';
-            banner.innerHTML = `<div class="status-icon"><div class="spinner"></div></div><div class="status-title">Loading payment details…</div><div class="status-subtitle">Retrieving transaction information</div>`;
-            document.getElementById('cardBody').innerHTML = '';
-
-            try {
-                const res = await fetch(`${apiBase}/v1/payment/detail/${paymentID}`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json', 'PaymentToken': paymentToken }
-                });
-
-                if (!res.ok) {
-                    updateJsonView({ httpStatus: res.status, statusText: res.statusText });
-                    renderError('API Error', `HTTP ${res.status} — ${res.statusText}`);
-                    return;
-                }
-
-                const data = await res.json();
-                updateJsonView(data);
-
-                if (data.error && data.error.code !== '0') {
-                    renderError('Transaction Error', `[${data.error.code}] ${data.error.description}`);
-                    return;
-                }
-                if (!data.payload) { renderError('Unexpected Response', 'No payload in API response'); return; }
-
-                renderCard(data.payload);
-            } catch (err) {
-                updateJsonView({ error: err.message });
-                renderError('Connection Error', `Unable to reach the payment gateway. ${err.message||''}`);
-            }
-        }
-
-        // ==================================================================
-        // BOOT
-        // ==================================================================
-        fetchPaymentDetail();
-    </script>
+load();
+</script>
 </body>
 </html>
