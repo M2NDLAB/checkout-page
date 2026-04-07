@@ -1,603 +1,968 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M2NDLAB — Payment Result</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        /*
-         * Fabrick brand palette (sourced from fabrick.com):
-         *   Primary navy: #002E6D
-         *   Accent blue:  #0057B8
-         *   Light blue:   #0066CC
-         *   Sky/bg:       #EAF1FB
-         *   Text dark:    #0B1A30
-         *   Font:         Inter (main body on fabrick.com)
-         */
-        :root {
-            --fabrick-navy:    #002E6D;
-            --fabrick-blue:    #0057B8;
-            --fabrick-accent:  #0066CC;
-            --fabrick-sky:     #EAF1FB;
-            --fabrick-dark:    #0B1A30;
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>M2NDLAB — Payment Result</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-            --ok:       #0D9668;
-            --ok-bg:    #ECFDF5;
-            --ok-ring:  #A7F3D0;
-            --ko:       #DC2626;
-            --ko-bg:    #FEF2F2;
-            --ko-ring:  #FECACA;
-            --wait:     #D97706;
-            --wait-bg:  #FFFBEB;
-            --wait-ring:#FDE68A;
+  <style>
+    :root {
+      /* status colors – overridden by JS */
+      --sc:    #2563EB;
+      --sc-l:  #60A5FA;
+      --sc-g:  rgba(37,99,235,.18);
+      --sc-glow: rgba(37,99,235,.35);
 
-            --bg:       #F3F5F9;
-            --card:     #FFFFFF;
-            --card-2:   #F8FAFC;
-            --brd:      #E5E8EE;
-            --brd-l:    #EEF1F5;
+      --bg:      #07090F;
+      --glass:   rgba(10,14,26,.78);
+      --glass2:  rgba(14,20,36,.6);
+      --border:  rgba(255,255,255,.08);
+      --border2: rgba(255,255,255,.13);
+      --surface: rgba(255,255,255,.04);
+      --surface2:rgba(255,255,255,.07);
 
-            --t1: #0B1A30;
-            --t2: #475569;
-            --t3: #94A3B8;
+      --text:  #F0F5FF;
+      --text2: #9CB0D0;
+      --muted: #4A6080;
+      --code:  rgba(0,0,0,.4);
 
-            --r-sm: 10px;
-            --r-lg: 16px;
-            --r-xl: 22px;
-            --shadow: 0 1px 2px rgba(0,0,0,.03), 0 4px 16px rgba(0,0,0,.06);
-        }
+      --r:   16px;
+      --rsm: 8px;
+    }
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            font-size: 14px;
-            color: var(--t1);
-            background: var(--bg);
-            -webkit-font-smoothing: antialiased;
-        }
+    html, body {
+      height: 100%; font-family: 'Outfit', sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
 
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding: 32px 16px 48px;
-        }
+    /* WebGL canvas */
+    #bg {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; width: 100%; height: 100%;
+    }
 
-        .container { width: 100%; max-width: 720px; }
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: 32px 16px 64px;
+    }
 
-        /* ==== FLIP CARD ==== */
-        .card-wrap { perspective: 1200px; position: relative; }
-        .flipper {
-            transition: transform 0.55s cubic-bezier(.4,0,.2,1);
-            transform-style: preserve-3d;
-            position: relative;
-        }
-        .flipper.flipped { transform: rotateY(180deg); }
+    /* ── CARD ── */
+    .card-wrap { width: 100%; max-width: 680px; perspective: 1400px; }
 
-        .face {
-            backface-visibility: hidden; -webkit-backface-visibility: hidden;
-            background: var(--card);
-            border-radius: var(--r-xl);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--brd-l);
-            overflow: hidden;
-        }
-        .face-back {
-            position: absolute; inset: 0;
-            transform: rotateY(180deg);
-            display: flex; flex-direction: column;
-        }
+    .flipper {
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform .6s cubic-bezier(.4,0,.2,1);
+    }
+    .flipper.flipped { transform: rotateY(180deg); }
 
-        /* ==== GHOST BUTTONS ==== */
-        .ghost-bar {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            display: flex; justify-content: space-between;
-            z-index: 10; pointer-events: none;
-        }
-        .ghost {
-            pointer-events: auto;
-            width: 28px; height: 28px; border-radius: 7px;
-            border: none; background: transparent;
-            color: transparent; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: all .25s;
-        }
-        .ghost:hover {
-            background: rgba(255,255,255,.88); color: var(--fabrick-navy);
-            box-shadow: 0 2px 8px rgba(0,0,0,.1);
-        }
-        .ghost svg { width: 13px; height: 13px; stroke-width: 2.5; }
-        .ghost.spin svg { animation: spin .7s linear infinite; }
+    .face {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.04) inset,
+        0 32px 80px rgba(0,0,0,.5),
+        0 0 60px var(--sc-glow);
+      transition: box-shadow .5s ease;
+    }
+    .face-back {
+      position: absolute; inset: 0;
+      transform: rotateY(180deg);
+      display: flex; flex-direction: column;
+      background: #070C14;
+    }
 
-        /* Dark ghost for back face */
-        .ghost-dark:hover { background: rgba(255,255,255,.1); color: #94A3B8; }
+    /* ── GHOST BUTTONS ── */
+    .ghost-bar {
+      position: absolute; top: 12px; right: 12px; left: 12px;
+      display: flex; justify-content: space-between;
+      z-index: 20; pointer-events: none;
+    }
+    .ghost {
+      pointer-events: auto; width: 30px; height: 30px;
+      border-radius: 8px; border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.05);
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; backdrop-filter: blur(8px);
+    }
+    .ghost:hover {
+      background: rgba(255,255,255,.12); color: var(--text);
+      border-color: rgba(255,255,255,.2);
+    }
+    .ghost svg { width: 13px; height: 13px; stroke-width: 2; }
+    .ghost.spin svg { animation: spin .7s linear infinite; }
 
-        /* ==== STATUS BANNER ==== */
-        .banner { padding: 28px 24px 22px; text-align: center; position: relative; overflow: hidden; }
-        .banner::after {
-            content: ''; position: absolute; inset: 0; pointer-events: none;
-            background: radial-gradient(ellipse at 40% 0%, currentColor 0%, transparent 65%);
-            opacity: .05;
-        }
-        .banner.ok   { background: var(--ok-bg);   color: var(--ok); }
-        .banner.ko   { background: var(--ko-bg);   color: var(--ko); }
-        .banner.wait { background: var(--wait-bg);  color: var(--wait); }
-        .banner.load { background: var(--fabrick-sky); color: var(--fabrick-blue); }
-        .banner.err  { background: var(--ko-bg);   color: var(--ko); }
+    /* ── STATUS HERO ── */
+    .s-hero {
+      padding: 44px 28px 28px;
+      text-align: center;
+      position: relative;
+    }
 
-        .sicon {
-            width: 54px; height: 54px; border-radius: 50%;
-            display: inline-flex; align-items: center; justify-content: center;
-            margin-bottom: 10px; font-size: 22px; font-weight: 800;
-        }
-        .banner.ok   .sicon { background: var(--ok);   color: #fff; box-shadow: 0 0 0 6px var(--ok-ring); }
-        .banner.ko   .sicon { background: var(--ko);   color: #fff; box-shadow: 0 0 0 6px var(--ko-ring); }
-        .banner.wait .sicon { background: var(--wait);  color: #fff; box-shadow: 0 0 0 6px var(--wait-ring); }
-        .banner.load .sicon { background: var(--fabrick-blue); color: #fff; box-shadow: 0 0 0 6px #B8D4F0; }
-        .banner.err  .sicon { background: var(--ko);   color: #fff; box-shadow: 0 0 0 6px var(--ko-ring); }
+    .s-ring {
+      width: 72px; height: 72px;
+      border-radius: 50%; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      background: var(--sc-g);
+      border: 2px solid var(--sc);
+      box-shadow: 0 0 0 8px var(--sc-g), 0 0 32px var(--sc-glow);
+      transition: all .5s ease;
+    }
+    .s-ring svg { width: 30px; height: 30px; stroke: var(--sc); stroke-width: 2.5; }
+    .s-ring .spin-icon { width: 28px; height: 28px; border: 3px solid var(--sc-g); border-top-color: var(--sc); border-radius: 50%; animation: spin .8s linear infinite; }
 
-        .stitle { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
-        .ssub   { font-size: 12px; opacity: .75; font-weight: 500; margin-top: 2px; }
+    .s-result {
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .15em; text-transform: uppercase;
+      color: var(--sc); margin-bottom: 6px;
+    }
+    .s-title { font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+    .s-sub { font-size: 13px; color: var(--text2); margin-top: 6px; }
 
-        /* ==== AMOUNT ==== */
-        .amt-bar {
-            padding: 18px 24px;
-            display: flex; align-items: baseline; justify-content: center; gap: 6px;
-            border-bottom: 1px solid var(--brd);
-            background: var(--card-2);
-        }
-        .amt-bar .cur { font-size: 18px; font-weight: 700; color: var(--t3); }
-        .amt-bar .num { font-size: 34px; font-weight: 800; color: var(--fabrick-navy); letter-spacing: -1.5px; }
-        .amt-bar .dec { font-size: 20px; font-weight: 700; color: var(--fabrick-navy); opacity: .6; }
-        .amt-bar .cur-code { font-size: 12px; font-weight: 600; color: var(--t3); margin-left: 2px; text-transform: uppercase; }
+    /* Amount */
+    .s-amount {
+      display: flex; align-items: baseline; justify-content: center;
+      gap: 4px; margin-top: 20px;
+    }
+    .amt-sym { font-size: 20px; font-weight: 700; color: var(--text2); }
+    .amt-int { font-size: 48px; font-weight: 800; letter-spacing: -2px; color: var(--text); line-height: 1; }
+    .amt-dec { font-size: 24px; font-weight: 700; color: var(--text2); }
+    .amt-curr { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--muted); margin-left: 4px; align-self: center; }
 
-        /* ==== SUSPENDED WARNING ==== */
-        .warn-box {
-            margin: 14px 16px 0; padding: 10px 12px;
-            background: var(--wait-bg); border: 1px solid var(--wait-ring);
-            border-radius: var(--r-sm); display: flex; gap: 8px;
-        }
-        .warn-box p { font-size: 11px; color: var(--wait); font-weight: 500; line-height: 1.5; }
+    /* ── PILLS ROW ── */
+    .pills-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 0 20px 20px; justify-content: center;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 99px;
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--text2);
+    }
+    .pill .pd { width: 6px; height: 6px; border-radius: 50%; background: var(--sc); flex-shrink: 0; }
 
-        /* ==== CLUSTER SECTIONS ==== */
-        .cluster { border-bottom: 1px solid var(--brd-l); }
-        .cluster:last-of-type { border-bottom: none; }
+    /* ── WARNING BANNER ── */
+    .w-banner {
+      margin: 0 20px 16px;
+      padding: 12px 16px;
+      border-radius: var(--rsm);
+      background: rgba(245,158,11,.08);
+      border: 1px solid rgba(245,158,11,.25);
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .w-banner svg { flex-shrink: 0; width: 16px; height: 16px; color: #F59E0B; margin-top: 1px; }
+    .w-banner p { font-size: 12px; color: #FDE68A; line-height: 1.6; }
+    .w-banner p strong { color: #F59E0B; }
 
-        .cl-title {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .8px; color: var(--t3); padding: 14px 20px 6px;
-        }
+    /* Error box */
+    .err-box {
+      margin: 0 20px 16px;
+      padding: 14px 16px;
+      border-radius: var(--rsm);
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.2);
+    }
+    .err-box .err-code {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: rgba(239,68,68,.6); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px;
+    }
+    .err-box .err-desc { font-size: 14px; font-weight: 600; color: #FCA5A5; }
 
-        .row {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            padding: 5px 20px; gap: 10px;
-        }
-        .row:hover { background: var(--card-2); }
-        .rk { font-size: 11.5px; color: var(--t2); font-weight: 500; flex-shrink: 0; }
-        .rv {
-            font-size: 11px; font-weight: 600; color: var(--t1);
-            text-align: right; word-break: break-all;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .rv.txt { font-family: 'Inter', sans-serif; font-size: 11.5px; }
-        .rv.nil { color: var(--t3); font-style: italic; font-weight: 400; }
+    /* ── SECTIONS ── */
+    .section { border-top: 1px solid var(--border); }
 
-        /* Badges */
-        .b { display: inline-flex; padding: 2px 8px; border-radius: 5px; font-size: 10.5px; font-weight: 700; font-family: 'Inter',sans-serif; }
-        .b-blue { background: var(--fabrick-sky); color: var(--fabrick-blue); }
-        .b-ok   { background: var(--ok-bg); color: var(--ok); }
-        .b-ko   { background: var(--ko-bg); color: var(--ko); }
-        .b-wait { background: var(--wait-bg); color: var(--wait); }
-        .b-mute { background: var(--card-2); color: var(--t2); border: 1px solid var(--brd); }
+    .sec-head {
+      padding: 14px 20px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .sec-head-fixed { padding: 14px 20px 10px; }
+    .sec-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); display: flex; align-items: center; gap: 6px;
+    }
+    .sec-label .sc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sc); opacity: .5; }
+    .sec-chevron { font-size: 10px; color: var(--muted); transition: transform .2s; }
+    .sec-head.open .sec-chevron { transform: rotate(180deg); }
+    .sec-body { overflow: hidden; }
+    .sec-body.closed { display: none; }
 
-        /* Collapsible */
-        .cl-head {
-            cursor: pointer; display: flex; align-items: center;
-            justify-content: space-between; padding: 14px 20px 6px; user-select: none;
-        }
-        .cl-head .chev { font-size: 10px; color: var(--t3); transition: transform .2s; }
-        .cl-head.open .chev { transform: rotate(180deg); }
-        .cl-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
-        .cl-body.open { max-height: 1200px; }
+    /* ── ROWS ── */
+    .row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 5px 20px; gap: 16px;
+      transition: background .13s;
+    }
+    .row:hover { background: var(--surface); }
+    .rk {
+      font-size: 11.5px; color: var(--text2); font-weight: 500;
+      flex-shrink: 0; min-width: 130px;
+    }
+    .rv {
+      font-size: 11px; font-weight: 600; color: var(--text);
+      text-align: right; word-break: break-all;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rv.txt { font-family: 'Outfit', sans-serif; font-size: 11.5px; }
+    .rv.nil { color: var(--muted); font-style: italic; font-weight: 400; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
 
-        /* Nested label */
-        .nest-label {
-            font-size: 9px; font-weight: 700; letter-spacing: .5px;
-            color: var(--fabrick-blue); text-transform: uppercase;
-            padding: 8px 20px 2px;
-            border-top: 1px dashed var(--brd-l);
-        }
+    /* Badges */
+    .b {
+      display: inline-flex; align-items: center; padding: 2px 9px;
+      border-radius: 5px; font-size: 10.5px; font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+    }
+    .b-ok   { background: rgba(16,185,129,.15); color: #10B981; border: 1px solid rgba(16,185,129,.25); }
+    .b-ko   { background: rgba(239,68,68,.12);  color: #EF4444; border: 1px solid rgba(239,68,68,.22); }
+    .b-wait { background: rgba(245,158,11,.12); color: #F59E0B; border: 1px solid rgba(245,158,11,.25); }
+    .b-info { background: rgba(96,165,250,.12); color: #60A5FA; border: 1px solid rgba(96,165,250,.22); }
+    .b-mute { background: var(--surface);       color: var(--text2); border: 1px solid var(--border2); }
 
-        /* ==== CARD FOOTER ==== */
-        .cfoot {
-            padding: 12px 20px;
-            border-top: 1px solid var(--brd);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .cfoot p { font-size: 10.5px; color: var(--t3); }
-        .cfoot-mid { display: flex; align-items: center; gap: 8px; }
-        .cfoot-mid a { display: flex; color: var(--t3); opacity: .35; transition: opacity .2s; }
-        .cfoot-mid a:hover { opacity: 1; }
-        .cfoot-mid a svg { width: 14px; height: 14px; }
-        .cfoot-mid .cdot { width: 3px; height: 3px; border-radius: 50%; background: var(--t3); opacity: .4; }
-        .cfoot .sid { font-family: 'JetBrains Mono',monospace; font-size: 10px; color: var(--t3); text-align: right; }
+    /* Nest label */
+    .nest { 
+      font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--sc); padding: 8px 20px 4px;
+      border-top: 1px dashed rgba(255,255,255,.05);
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-        /* ==== JSON BACK ==== */
-        .jhead { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.06); background: #1c2033; display: flex; align-items: center; }
-        .jhead h3 { font-size: 10px; font-weight: 700; color: #64748B; letter-spacing: .8px; text-transform: uppercase; }
-        .jbody { flex: 1; overflow: auto; padding: 14px 18px; background: #151826; }
-        .jbody pre { font-family: 'JetBrains Mono',monospace; font-size: 10.5px; line-height: 1.65; color: #CBD5E1; white-space: pre-wrap; word-break: break-all; }
-        .jk { color: #7DD3FC; } .js { color: #86EFAC; } .jn { color: #FDE047; } .jb { color: #C084FC; } .jnl { color: #64748B; font-style: italic; }
+    /* Events timeline */
+    .ev-item {
+      padding: 8px 20px; display: flex; gap: 12px; align-items: flex-start;
+    }
+    .ev-item:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,.04); }
+    .ev-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--sc); flex-shrink: 0; margin-top: 4px;
+      box-shadow: 0 0 6px var(--sc);
+    }
+    .ev-body { flex: 1; }
+    .ev-type { font-size: 12px; font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+    .ev-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .ev-amt { font-size: 13px; font-weight: 700; color: var(--sc); font-family: 'JetBrains Mono', monospace; }
 
-        /* ==== ANIMATIONS ==== */
-        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
-        .pulse { animation: pulse 2s ease-in-out infinite; }
-        @keyframes up { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
-        .face:first-child { animation: up .45s ease-out; }
+    /* Auto-operation block */
+    .auto-block {
+      margin: 0 20px 14px; padding: 12px 16px;
+      border-radius: var(--rsm); background: var(--surface);
+      border: 1px solid var(--border2);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .auto-block .ab-label { font-size: 11px; color: var(--text2); }
+    .auto-block .ab-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text); }
 
-        @media(max-width:600px) {
-            body { padding: 16px 10px 32px; }
-            .cfoot { flex-direction: column; gap: 6px; text-align: center; }
-        }
-    </style>
+    /* ── FOOTER ── */
+    .card-foot {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+    }
+    .cf-left { font-size: 11px; color: var(--muted); }
+    .cf-left strong { color: var(--text2); }
+    .cf-links { display: flex; gap: 8px; align-items: center; }
+    .cf-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 11px; border-radius: 6px;
+      font-size: 11px; font-family: 'Outfit', sans-serif; font-weight: 600;
+      text-decoration: none; color: var(--text2);
+      border: 1px solid var(--border2); background: var(--surface);
+      transition: all .15s;
+    }
+    .cf-link:hover { border-color: var(--sc); color: var(--sc); }
+    .cf-link svg { width: 12px; height: 12px; }
+    .cf-sandbox {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(245,158,11,.1); color: #F59E0B;
+      border: 1px solid rgba(245,158,11,.2);
+    }
+
+    /* ── JSON BACK ── */
+    .jhead {
+      padding: 12px 18px; background: #0C1020;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .jhead h3 { font-size: 10px; font-weight: 700; color: #4A6080; letter-spacing: .1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+    .jbody { flex: 1; overflow: auto; padding: 16px 20px; background: #080C16; }
+    .jbody pre { font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.7; color: #8FA3C8; white-space: pre-wrap; word-break: break-all; }
+    .jk { color: #7DD3FC; } .js { color: #86EFAC; } .jn { color: #FDE047; } .jb { color: #C084FC; } .jnl { color: #4A6080; font-style: italic; }
+
+    /* ── SKELETON ── */
+    .skel { animation: shimmer 1.6s ease-in-out infinite; background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%); background-size: 200% 100%; border-radius: 4px; }
+    @keyframes shimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+    .skel-row { height: 12px; margin: 8px 20px; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .anim-in { animation: fadeUp .4s ease both; }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+
+    /* draw-in check animation */
+    @keyframes draw { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
+    .draw-check { stroke-dasharray: 50; stroke-dashoffset: 50; animation: draw .5s .2s ease forwards; }
+    @keyframes drawX { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+    .draw-x { stroke-dasharray: 30; stroke-dashoffset: 30; }
+    .draw-x:nth-child(1) { animation: drawX .3s .1s ease forwards; }
+    .draw-x:nth-child(2) { animation: drawX .3s .25s ease forwards; }
+
+    /* ── MISSING PARAMS ── */
+    .missing-wrap { padding: 40px 28px; text-align: center; }
+    .missing-wrap h2 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .missing-wrap p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+    .missing-wrap code { display: block; margin-top: 16px; padding: 14px 16px; background: var(--code); border-radius: var(--rsm); font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: left; word-break: break-all; color: var(--text2); }
+
+    @media (max-width: 600px) {
+      .page { padding: 16px 10px 48px; }
+      .amt-int { font-size: 36px; }
+      .card-foot { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <div class="card-wrap">
-        <div class="ghost-bar" id="gFront">
-            <button class="ghost" id="btnR" title="Refresh" onclick="doRefresh()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>
-            </button>
-            <button class="ghost" title="View raw JSON" onclick="toJson()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            </button>
-        </div>
-        <div class="flipper" id="flip">
-            <div class="face" id="front">
-                <div class="banner load" id="ban">
-                    <div class="sicon"><div class="spinner"></div></div>
-                    <div class="stitle">Loading payment details…</div>
-                    <div class="ssub">Retrieving transaction information</div>
-                </div>
-                <div id="body"></div>
-            </div>
-            <div class="face face-back" id="back">
-                <div class="ghost-bar" style="position:absolute;">
-                    <button class="ghost ghost-dark" title="Refresh" onclick="doRefresh()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>
-                    </button>
-                    <button class="ghost ghost-dark" title="Back to details" onclick="toFront()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    </button>
-                </div>
-                <div class="jhead"><h3>Raw API Response</h3></div>
-                <div class="jbody"><pre id="jraw">No data yet.</pre></div>
-            </div>
-        </div>
+
+<canvas id="bg"></canvas>
+
+<div class="page">
+  <div class="card-wrap">
+    <div class="ghost-bar" id="gFront">
+      <button class="ghost" id="btnR" title="Refresh" onclick="doRefresh()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/>
+          <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/>
+        </svg>
+      </button>
+      <button class="ghost" title="Raw JSON" onclick="toJson()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+        </svg>
+      </button>
     </div>
+
+    <div class="flipper" id="flip">
+
+      <!-- FRONT -->
+      <div class="face" id="front">
+        <div id="front-content">
+          <!-- skeleton loading -->
+          <div id="skel-load">
+            <div style="height:48px"></div>
+            <div class="skel skel-row" style="width:60%;margin:0 auto 8px"></div>
+            <div class="skel skel-row" style="width:40%;margin:0 auto 32px"></div>
+            <div class="skel skel-row" style="width:90%"></div>
+            <div class="skel skel-row" style="width:75%"></div>
+            <div class="skel skel-row" style="width:85%"></div>
+            <div class="skel skel-row" style="width:60%"></div>
+            <div style="height:32px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACK – Raw JSON -->
+      <div class="face face-back" id="back">
+        <div class="ghost-bar" style="position:absolute">
+          <button class="ghost" title="Refresh" onclick="doRefresh()" style="background:rgba(255,255,255,.03)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/>
+              <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/>
+            </svg>
+          </button>
+          <button class="ghost" title="Back" onclick="toFront()" style="background:rgba(255,255,255,.03)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </button>
+        </div>
+        <div class="jhead" style="margin-top:44px">
+          <h3>Raw API Response</h3>
+          <button onclick="copyJson(this)" class="ghost" style="width:auto;padding:0 10px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#4A6080">copy</button>
+        </div>
+        <div class="jbody"><pre id="jraw">No data yet.</pre></div>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <script>
-/* =================================================================
-   M2NDLAB — PAYMENT RESULT PAGE
-   Clustered layout, all fields mapped, "Other" catchall.
-   Fabrick brand. Sandbox only.
-   ================================================================= */
+/* ═══════════════════════════════════════════════════
+   WEBGL – Three.js particle field
+═══════════════════════════════════════════════════ */
+(function initWebGL() {
+  const canvas = document.getElementById('bg');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 2000);
+  camera.position.z = 80;
+
+  // Primary particles
+  const N = 1800;
+  const pos = new Float32Array(N * 3);
+  const sizes = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = 40 + Math.random() * 120;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i*3+2] = r * Math.cos(phi);
+    sizes[i] = 0.3 + Math.random() * 1.2;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+  const mat = new THREE.PointsMaterial({
+    size: 0.8, color: new THREE.Color('#2563EB'),
+    transparent: true, opacity: 0.55,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  // Secondary sparse stars
+  const N2 = 600;
+  const pos2 = new Float32Array(N2 * 3);
+  for (let i = 0; i < N2; i++) {
+    pos2[i*3]   = (Math.random()-0.5)*400;
+    pos2[i*3+1] = (Math.random()-0.5)*400;
+    pos2[i*3+2] = (Math.random()-0.5)*200;
+  }
+  const geo2 = new THREE.BufferGeometry();
+  geo2.setAttribute('position', new THREE.BufferAttribute(pos2, 3));
+  const mat2 = new THREE.PointsMaterial({
+    size: 0.4, color: new THREE.Color('#ffffff'),
+    transparent: true, opacity: 0.2,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  scene.add(new THREE.Points(geo2, mat2));
+
+  // Resize
+  const resize = () => {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Expose color setter
+  let targetColor = new THREE.Color('#2563EB');
+  const currentColor = new THREE.Color('#2563EB');
+  window.setParticleColor = (hex) => { targetColor.set(hex); };
+
+  // Mouse parallax
+  let mx = 0, my = 0;
+  document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  let t = 0;
+  const animate = () => {
+    requestAnimationFrame(animate);
+    t += 0.003;
+    points.rotation.y = t * 0.08 + mx * 0.04;
+    points.rotation.x = my * 0.03;
+    currentColor.lerp(targetColor, 0.02);
+    mat.color.copy(currentColor);
+    renderer.render(scene, camera);
+  };
+  animate();
+})();
+
+/* ═══════════════════════════════════════════════════
+   APP STATE
+═══════════════════════════════════════════════════ */
 const P = new URLSearchParams(window.location.search);
-function gp(n){const e=P.get(n);if(e!==null)return e;const l=n.toLowerCase();for(const[k,v]of P.entries())if(k.toLowerCase()===l)return v;return '';}
-const SL=gp('a'), US=gp('Status'), PID=gp('paymentID'), PT=gp('paymentToken');
-const API='https://sandbox.gestpay.net/api';
+function gp(n) {
+  const e = P.get(n); if (e !== null) return e;
+  const l = n.toLowerCase();
+  for (const [k, v] of P.entries()) if (k.toLowerCase() === l) return v;
+  return '';
+}
+const SL  = gp('a');
+const US  = gp('Status');
+const PID = gp('paymentID');
+const PT  = gp('paymentToken');
 
-let rawJson=null;
+const API_SANDBOX = 'https://sandbox.gestpay.net/api';
+let rawJson = null;
 
-/* ---- Flip ---- */
-function toJson(){document.getElementById('flip').classList.add('flipped');document.getElementById('gFront').style.display='none';}
-function toFront(){document.getElementById('flip').classList.remove('flipped');document.getElementById('gFront').style.display='flex';}
-async function doRefresh(){const b=document.getElementById('btnR');b.classList.add('spin');toFront();await load();b.classList.remove('spin');}
+/* ─── Status configuration ─── */
+const STATUS_CFG = {
+  APPROVED:    { key:'ok',   color:'#10B981', glow:'rgba(16,185,129,.35)', label:'Pagamento Approvato',  sub:'Transazione elaborata con successo' },
+  DECLINED:    { key:'ko',   color:'#EF4444', glow:'rgba(239,68,68,.35)',  label:'Pagamento Rifiutato',  sub:'La transazione non ha avuto esito positivo' },
+  PENDING:     { key:'wait', color:'#F59E0B', glow:'rgba(245,158,11,.3)',  label:'In Attesa di Conferma',sub:'L\'esito non è ancora definitivo' },
+  WAITING:     { key:'wait', color:'#F59E0B', glow:'rgba(245,158,11,.3)',  label:'Pagamento in Corso',   sub:'Il pagamento è in elaborazione' },
+  UNSUBMITTED: { key:'wait', color:'#F59E0B', glow:'rgba(245,158,11,.3)',  label:'Non Ancora Avviato',   sub:'Il pagamento non è ancora stato inviato' },
+  XX:          { key:'wait', color:'#F59E0B', glow:'rgba(245,158,11,.3)',  label:'Stato Sospeso (XX)',   sub:'In attesa di notifica S2S finale' },
+  LOADING:     { key:'load', color:'#2563EB', glow:'rgba(37,99,235,.35)',  label:'Caricamento…',         sub:'Recupero dettagli transazione' },
+  ERROR:       { key:'ko',   color:'#EF4444', glow:'rgba(239,68,68,.35)',  label:'Errore',               sub:'Impossibile recuperare i dettagli' },
+};
 
-/* ---- JSON highlight ---- */
-function hl(j){return JSON.stringify(j,null,2).replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,m=>{let c='jn';if(/^"/.test(m))c=/:$/.test(m)?'jk':'js';else if(/true|false/.test(m))c='jb';else if(/null/.test(m))c='jnl';return`<span class="${c}">${m}</span>`;});}
-function setJson(d){rawJson=d;document.getElementById('jraw').innerHTML=d?hl(d):'No data.';}
+function getCfg(result) {
+  const u = (result || '').toUpperCase();
+  return STATUS_CFG[u] || { key:'ko', color:'#EF4444', glow:'rgba(239,68,68,.35)', label: result || 'Sconosciuto', sub:'Stato non riconosciuto' };
+}
 
-/* ---- Status config ---- */
-function sc(r){
-    const u=(r||'').toUpperCase();
-    if(u==='APPROVED'||u==='OK')return{t:'ok',i:'✓',h:'Payment Approved',s:'Transaction successfully processed'};
-    if(u==='DECLINED'||u==='KO')return{t:'ko',i:'✕',h:'Payment Declined',s:'The transaction could not be completed'};
-    if(['PENDING','WAITING','UNSUBMITTED','XX'].includes(u)){
-        const m={PENDING:'Awaiting confirmation from payment provider',WAITING:'Payment is still being processed',UNSUBMITTED:'Payment has not been submitted yet',XX:'Status is not yet final'};
-        return{t:'wait',i:'⏳',h:'Payment Pending',s:m[u]||'Awaiting confirmation',warn:true};
+function applyTheme(cfg) {
+  const r = document.documentElement.style;
+  r.setProperty('--sc',     cfg.color);
+  r.setProperty('--sc-l',   cfg.color);
+  r.setProperty('--sc-g',   cfg.glow.replace('.35)','.15)').replace('.3)','.12)'));
+  r.setProperty('--sc-glow',cfg.glow);
+  if (window.setParticleColor) window.setParticleColor(cfg.color);
+}
+
+/* ─── Flip ─── */
+function toJson()  { document.getElementById('flip').classList.add('flipped');    document.getElementById('gFront').style.display='none'; }
+function toFront() { document.getElementById('flip').classList.remove('flipped'); document.getElementById('gFront').style.display='flex'; }
+async function doRefresh() { const b = document.getElementById('btnR'); b.classList.add('spin'); toFront(); await load(); b.classList.remove('spin'); }
+
+function copyJson(btn) {
+  const text = document.getElementById('jraw').textContent;
+  navigator.clipboard.writeText(text).then(() => { btn.textContent = 'copied ✓'; setTimeout(()=>btn.textContent='copy', 2000); });
+}
+
+/* ─── JSON highlight ─── */
+function hl(j) {
+  return JSON.stringify(j, null, 2).replace(
+    /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    m => {
+      let c = 'jn';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'jk' : 'js';
+      else if (/true|false/.test(m)) c = 'jb';
+      else if (/null/.test(m)) c = 'jnl';
+      return `<span class="${c}">${m}</span>`;
     }
-    return{t:'ko',i:'?',h:'Unknown Status',s:`Result: ${r||'N/A'}`};
+  );
+}
+function setJson(d) { rawJson = d; document.getElementById('jraw').innerHTML = d ? hl(d) : 'No data.'; }
+
+/* ─── Value helpers ─── */
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function v(x) { return (x !== null && x !== undefined && x !== '') ? x : null; }
+function hasVal(x) { return x !== null && x !== undefined && x !== '' && !(typeof x === 'object' && !Array.isArray(x) && Object.values(x).every(vv => !hasVal(vv))); }
+function fmtAmt(a) { const n = parseFloat(a); return isNaN(n) ? null : n; }
+function curSym(c) { return {EUR:'€',USD:'$',GBP:'£',CHF:'CHF'}[(c||'').toUpperCase()] || c || '€'; }
+
+const EVT_LABEL = { AUT:'Authorization', MOV:'Settlement', CAN:'Cancellation', STO:'Refund', PRE:'Pre-Auth' };
+const ST_LABEL  = { AUT:'Authorized', MOV:'Settled', CAN:'Cancelled', STO:'Refunded', PRE:'Pre-Authorized', WAITAUT:'Waiting Auth' };
+const TDS_LABEL = { Y:'Authenticated', N:'Not Authenticated', A:'Attempted', U:'Unavailable', R:'Rejected', C:'Challenge Required' };
+const TDS_CLASS = { Y:'ok', N:'ko', A:'wait', U:'mute', R:'ko', C:'wait' };
+
+/* ─── Row renderers ─── */
+function R(k, val, badge) {
+  if (badge) return `<div class="row"><span class="rk">${k}</span><span class="rv">${val}</span></div>`;
+  if (!hasVal(val)) return '';
+  return `<div class="row"><span class="rk">${k}</span><span class="rv">${esc(String(val))}</span></div>`;
+}
+function Rt(k, val) {
+  if (!hasVal(val)) return '';
+  return `<div class="row"><span class="rk">${k}</span><span class="rv txt">${esc(String(val))}</span></div>`;
+}
+function badge(t, c) { return `<span class="b b-${c}">${esc(t)}</span>`; }
+function resBadge(r) {
+  const u = (r||'').toUpperCase();
+  if (u==='APPROVED') return badge(r,'ok');
+  if (u==='DECLINED') return badge(r,'ko');
+  return badge(r||'—','wait');
 }
 
-/* ---- Helpers ---- */
-const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function v(x){return(x!==null&&x!==undefined&&x!=='')?x:null;}
-function fmtAmt(a){const n=parseFloat(a);return isNaN(n)?null:n;}
-function cur(c){return{EUR:'€',USD:'$',GBP:'£',CHF:'CHF'}[(c||'').toUpperCase()]||c||'€';}
-function evtLabel(t){return{AUT:'Authorization',MOV:'Settlement',CAN:'Cancellation',STO:'Refund',PRE:'Pre-Auth'}[(t||'').toUpperCase()]||t||'—';}
-function stLabel(s){return{AUT:'Authorized',MOV:'Settled',CAN:'Cancelled',STO:'Refunded',PRE:'Pre-Authorized',WAITAUT:'Waiting Auth'}[(s||'').toUpperCase()]||s||'—';}
-function tdsLabel(s){return{Y:'Authenticated',N:'Not Authenticated',A:'Attempted',U:'Unavailable',R:'Rejected',C:'Challenge'}[s]||s||'—';}
-
-function R(k,val,isBadge){
-    if(isBadge)return`<div class="row"><span class="rk">${k}</span><span class="rv">${val}</span></div>`;
-    if(val===null||val===undefined||val==='')return`<div class="row"><span class="rk">${k}</span><span class="rv nil">—</span></div>`;
-    return`<div class="row"><span class="rk">${k}</span><span class="rv">${esc(String(val))}</span></div>`;
-}
-function Rt(k,val){
-    if(val===null||val===undefined||val==='')return`<div class="row"><span class="rk">${k}</span><span class="rv txt nil">—</span></div>`;
-    return`<div class="row"><span class="rk">${k}</span><span class="rv txt">${esc(String(val))}</span></div>`;
-}
-function badge(t,c){return`<span class="b b-${c}">${t}</span>`;}
-function resBadge(r){const u=(r||'').toUpperCase();if(u==='APPROVED')return badge(r,'ok');if(u==='DECLINED')return badge(r,'ko');return badge(r||'—','wait');}
-function toggle(h){h.classList.toggle('open');h.nextElementSibling.classList.toggle('open');}
-
-/* GitHub icon */
-const ghSvg=`<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
-/* Status page icon (signal/pulse) */
-const spSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
-
-function footer(leftHtml, rightHtml){
-    return`<div class="cfoot">
-        <p>${leftHtml}</p>
-        <div class="cfoot-mid">
-            <a href="https://github.com/M2NDLAB/checkout-page" target="_blank" title="GitHub">${ghSvg}</a>
-            <span class="cdot"></span>
-            <a href="https://status.fabrick.com/" target="_blank" title="Fabrick Status">${spSvg}</a>
-        </div>
-        <div>${rightHtml}</div>
+/* ─── Collapsible section ─── */
+function section(label, innerHtml, openByDefault = true) {
+  if (!innerHtml.trim()) return '';
+  const id = 'sec_' + Math.random().toString(36).slice(2,8);
+  return `
+    <div class="section">
+      <div class="sec-head ${openByDefault?'open':''}" onclick="toggleSec(this)">
+        <span class="sec-label"><span class="sc-dot"></span>${label}</span>
+        <span class="sec-chevron">▾</span>
+      </div>
+      <div class="sec-body ${openByDefault?'':'closed'}">${innerHtml}</div>
     </div>`;
 }
+function toggleSec(h) { h.classList.toggle('open'); h.nextElementSibling.classList.toggle('closed'); }
 
-/* ==== RENDER CARD ==== */
-function renderCard(p){
-    const ban=document.getElementById('ban'), bd=document.getElementById('body');
-    const cfg=sc(p.transactionResult);
-    const c=cur(p.currency);
+/* ─── Render helpers ─── */
+const ghSvg = `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+const spSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
+const docSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>`;
 
-    ban.className=`banner ${cfg.t}`;
-    ban.innerHTML=`<div class="sicon">${cfg.i}</div><div class="stitle">${cfg.h}</div><div class="ssub">${cfg.s}</div>`;
-    if(cfg.t==='wait')ban.querySelector('.sicon').classList.add('pulse');
+function renderFooter() {
+  return `<div class="card-foot">
+    <div class="cf-left">Processed by <strong>M2NDLAB</strong> via Fabrick <span class="cf-sandbox">SANDBOX</span></div>
+    <div class="cf-links">
+      <a href="https://github.com/M2NDLAB/checkout-page" class="cf-link" target="_blank" rel="noopener noreferrer">${ghSvg} GitHub</a>
+      <a href="https://status.fabrick.com/" class="cf-link" target="_blank" rel="noopener noreferrer">${spSvg} Status</a>
+      <a href="https://docs.fabrick.com/docs/paymentHubAndOrchestra/ecommerce" class="cf-link" target="_blank" rel="noopener noreferrer">${docSvg} Docs</a>
+    </div>
+  </div>`;
+}
 
-    let h='';
+/* ════════════════════════════════════════════════
+   MAIN RENDER
+════════════════════════════════════════════════ */
+function renderCard(p) {
+  const cfg = getCfg(p.transactionResult);
+  applyTheme(cfg);
 
-    /* Warning */
-    if(cfg.warn)h+=`<div class="warn-box"><span style="flex-shrink:0">⚠</span><p><strong>Do not fulfill this order yet.</strong><br>The outcome is not final. A S2S notification will confirm the result.</p></div>`;
+  const isOk    = cfg.key === 'ok';
+  const isKo    = cfg.key === 'ko';
+  const isWait  = cfg.key === 'wait';
+  const result  = (p.transactionResult || '').toUpperCase();
 
-    /* Amount */
-    const amt=fmtAmt(p.events?.[0]?.event?.eventamount);
-    if(amt!==null){
-        const parts=amt.toFixed(2).split('.');
-        const intPart=parseInt(parts[0]).toLocaleString('en-US');
-        h+=`<div class="amt-bar"><span class="cur">${c}</span><span class="num">${intPart}</span><span class="dec">.${parts[1]}</span><span class="cur-code">${v(p.currency)||''}</span></div>`;
+  let html = '<div class="anim-in">';
+
+  /* ── STATUS HERO ── */
+  let iconHtml;
+  if (isOk) {
+    iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline class="draw-check" points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  } else if (isKo) {
+    iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line class="draw-x" x1="18" y1="6" x2="6" y2="18"/><line class="draw-x" x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  } else if (isWait) {
+    iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  } else {
+    iconHtml = `<div class="spin-icon"></div>`;
+  }
+
+  // Amount from events
+  const firstEvent = p.events?.[0]?.event;
+  const amt = fmtAmt(firstEvent?.eventamount);
+
+  html += `<div class="s-hero">
+    <div class="s-ring ${isWait?'pulse':''}">${iconHtml}</div>
+    <div class="s-result">${p.transactionResult || 'UNKNOWN'}</div>
+    <div class="s-title">${cfg.label}</div>
+    <div class="s-sub">${cfg.sub}</div>`;
+
+  if (amt !== null && amt > 0) {
+    const parts = amt.toFixed(2).split('.');
+    const intFmt = parseInt(parts[0]).toLocaleString('it-IT');
+    html += `<div class="s-amount">
+      <span class="amt-sym">${curSym(p.currency)}</span>
+      <span class="amt-int">${intFmt}</span>
+      <span class="amt-dec">,${parts[1]}</span>
+      ${v(p.currency) ? `<span class="amt-curr">${p.currency}</span>` : ''}
+    </div>`;
+  }
+  html += `</div>`;
+
+  /* ── QUICK PILLS ── */
+  const pills = [];
+  if (v(p.paymentMethod)) pills.push(`<span class="pill"><span class="pd"></span>${esc(p.paymentMethod)}</span>`);
+  if (v(p.company) && p.company !== p.paymentMethod) pills.push(`<span class="pill">${esc(p.company)}</span>`);
+  if (v(p.bankTransactionID)) pills.push(`<span class="pill">TXN ${esc(p.bankTransactionID)}</span>`);
+  if (v(p.authorizationCode)) pills.push(`<span class="pill">Auth ${esc(p.authorizationCode)}</span>`);
+  if (v(p.maskedPAN)) pills.push(`<span class="pill">•••• ${esc(p.maskedPAN.slice(-4))}</span>`);
+  if (pills.length) html += `<div class="pills-row">${pills.join('')}</div>`;
+
+  /* ── WARNING BANNER (pending/waiting/XX) ── */
+  if (isWait || result === 'XX') {
+    html += `<div class="w-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <p><strong>Non procedere con l'ordine.</strong><br>L'esito non è ancora definitivo. Attendi la notifica S2S che comunicherà il risultato finale (OK o KO).</p>
+    </div>`;
+  }
+
+  /* ── ERROR BOX (declined) ── */
+  if (isKo && v(p.transactionErrorCode) && p.transactionErrorCode !== '0') {
+    html += `<div class="err-box">
+      <div class="err-code">Codice errore ${esc(p.transactionErrorCode)}</div>
+      <div class="err-desc">${esc(p.transactionErrorDescription || 'Transazione rifiutata')}</div>
+    </div>`;
+  }
+
+  /* ── AUTO OPERATION BLOCK ── */
+  if (p.automaticOperation && v(p.automaticOperation.type)) {
+    const ao = p.automaticOperation;
+    const aoType = (EVT_LABEL[ao.type] || ao.type || '—');
+    const aoAmt  = fmtAmt(ao.amount);
+    html += `<div class="auto-block">
+      <div>
+        <div class="ab-label">Operazione automatica pianificata</div>
+        <div class="ab-val">${esc(aoType)}${v(ao.date) ? ` · ${esc(ao.date)}` : ''}</div>
+      </div>
+      ${aoAmt !== null ? `<div style="text-align:right"><div class="ab-label">Importo</div><div class="ab-val">${curSym(p.currency)} ${aoAmt.toFixed(2)}</div></div>` : ''}
+    </div>`;
+  }
+
+  /* ── SECTION: TRANSAZIONE ── */
+  {
+    let s = '';
+    if (v(p.transactionType)) s += Rt('Tipo transazione', p.transactionType);
+    s += R('Esito', resBadge(p.transactionResult), true);
+    if (v(p.transactionState)) s += Rt('Stato', ST_LABEL[p.transactionState] || p.transactionState);
+    if (v(p.transactionErrorCode) && p.transactionErrorCode !== '0') {
+      s += R('Codice errore', p.transactionErrorCode);
+      s += Rt('Descrizione errore', p.transactionErrorDescription);
     }
+    s += R('Payment ID', v(p.paymentID));
+    s += R('Bank TX ID', v(p.bankTransactionID));
+    s += R('Auth Code', v(p.authorizationCode));
+    if (s) html += section('Transazione', s, true);
+  }
 
-    /* ---- CLUSTER: Transaction ---- */
-    h+=`<div class="cluster"><div class="cl-title">Transaction</div>`;
-    h+=R('transactionType', v(p.transactionType));
-    h+=R('transactionResult', resBadge(p.transactionResult), true);
-    h+=Rt('transactionState', v(p.transactionState)?stLabel(p.transactionState):null);
-    h+=R('transactionErrorCode', v(p.transactionErrorCode));
-    h+=Rt('transactionErrorDescription', v(p.transactionErrorDescription));
-    h+=R('bankTransactionID', v(p.bankTransactionID));
-    h+=R('authorizationCode', v(p.authorizationCode));
-    h+=R('paymentID', v(p.paymentID));
-    h+=`</div>`;
+  /* ── SECTION: ORDINE ── */
+  {
+    let s = '';
+    s += R('Shop TX ID', v(p.shopTransactionID));
+    s += R('Shop TX ID 2', v(p.shopTransactionID_2));
+    s += Rt('Valuta', v(p.currency));
+    s += Rt('Paese', v(p.country));
+    if (s) html += section('Ordine', s, true);
+  }
 
-    /* ---- CLUSTER: Order ---- */
-    h+=`<div class="cluster"><div class="cl-title">Order</div>`;
-    h+=R('shopTransactionID', v(p.shopTransactionID));
-    h+=R('shopTransactionID_2', v(p.shopTransactionID_2));
-    h+=Rt('currency', v(p.currency));
-    h+=Rt('country', v(p.country));
-    h+=`</div>`;
+  /* ── SECTION: METODO DI PAGAMENTO ── */
+  {
+    let s = '';
+    if (v(p.paymentMethod)) s += R('Metodo', badge(p.paymentMethod, 'info'), true);
+    s += Rt('Circuito', v(p.company));
+    s += Rt('Tipo prodotto', v(p.productType));
+    s += R('PAN mascherato', v(p.maskedPAN));
+    if (v(p.cvvPresent)) s += Rt('CVV presente', p.cvvPresent);
+    s += R('3DS Level', v(p.tdLevel));
+    if (s) html += section('Metodo di Pagamento', s, true);
+  }
 
-    /* ---- CLUSTER: Payment Method ---- */
-    h+=`<div class="cluster"><div class="cl-title">Payment Method</div>`;
-    h+=v(p.paymentMethod)?R('paymentMethod',badge(p.paymentMethod,'blue'),true):R('paymentMethod',null);
-    h+=Rt('company', v(p.company));
-    h+=Rt('productType', v(p.productType));
-    h+=R('maskedPAN', v(p.maskedPAN));
-    h+=Rt('cvvPresent', v(p.cvvPresent));
-    h+=R('tdLevel', v(p.tdLevel));
-    h+=`</div>`;
+  /* ── SECTION: TOKEN & CARTA ── */
+  {
+    let s = '';
+    s += R('Token', v(p.token));
+    if (v(p.tokenExpiryMonth) || v(p.tokenExpiryYear))
+      s += R('Scadenza token', `${p.tokenExpiryMonth||'—'}/${p.tokenExpiryYear||'—'}`);
+    if (p.tokenDetails) {
+      const td = p.tokenDetails;
+      s += `<div class="nest">tokenDetails</div>`;
+      s += R('Token Value', v(td.TokenValue));
+      if (v(td.TokenExpiryMonth)||v(td.TokenExpiryYear)) s += R('Scadenza', `${td.TokenExpiryMonth||'—'}/${td.TokenExpiryYear||'—'}`);
+      s += Rt('Provider', v(td.TokenProvider));
+      if (td.CardDetails) {
+        const cd = td.CardDetails;
+        s += `<div class="nest">CardDetails</div>`;
+        s += R('Suffisso carta', v(cd.CardSuffix));
+        if (v(cd.CardExpiryMonth)||v(cd.CardExpiryYear)) s += R('Scadenza carta', `${cd.CardExpiryMonth||'—'}/${cd.CardExpiryYear||'—'}`);
+        s += Rt('Titolare', v(cd.CardHolderName));
+      }
+    }
+    if (s) html += section('Token & Carta', s, false);
+  }
 
-    /* ---- CLUSTER: Token (collapsible) ---- */
-    h+=`<div class="cluster">`;
-    h+=`<div class="cl-head" onclick="toggle(this)"><span class="cl-title" style="padding:0">Token & Card</span><span class="chev">▼</span></div>`;
-    h+=`<div class="cl-body">`;
-    h+=R('token', v(p.token));
-    h+=R('tokenExpiryMonth', v(p.tokenExpiryMonth));
-    h+=R('tokenExpiryYear', v(p.tokenExpiryYear));
-    if(p.tokenDetails){
-        h+=`<div class="nest-label">tokenDetails</div>`;
-        h+=R('TokenValue', v(p.tokenDetails.TokenValue));
-        h+=R('TokenExpiryMonth', v(p.tokenDetails.TokenExpiryMonth));
-        h+=R('TokenExpiryYear', v(p.tokenDetails.TokenExpiryYear));
-        h+=Rt('TokenProvider', v(p.tokenDetails.TokenProvider));
-        if(p.tokenDetails.CardDetails){
-            h+=`<div class="nest-label">CardDetails</div>`;
-            const cd=p.tokenDetails.CardDetails;
-            h+=R('CardSuffix', v(cd.CardSuffix));
-            h+=R('CardExpiryMonth', v(cd.CardExpiryMonth));
-            h+=R('CardExpiryYear', v(cd.CardExpiryYear));
-            h+=Rt('CardHolderName', v(cd.CardHolderName));
-        }
-        if(p.tokenDetails.CardAssets){
-            h+=`<div class="nest-label">CardAssets</div>`;
-            const ca=p.tokenDetails.CardAssets;
-            ['CardArt','BrandLogo'].forEach(k=>{
-                if(ca[k]){
-                    h+=`<div class="nest-label" style="border:none;padding-top:4px">${k}</div>`;
-                    Object.keys(ca[k]).forEach(sk=>h+=Rt(sk, v(ca[k][sk])));
-                }
-            });
-        }
-    } else { h+=Rt('tokenDetails','null'); }
-    h+=`</div></div>`;
+  /* ── SECTION: 3D SECURE ── */
+  if (p.threeDS) {
+    let s = '';
+    const ar = p.threeDS.authenticationResult;
+    const td = p.threeDS.transDetails;
+    if (ar && hasVal(ar)) {
+      s += `<div class="nest">Risultato autenticazione</div>`;
+      if (v(ar.authenticationStatus)) s += R('Stato auth', badge(TDS_LABEL[ar.authenticationStatus]||ar.authenticationStatus, TDS_CLASS[ar.authenticationStatus]||'mute'), true);
+      s += R('Livello', v(ar.authenticationLevel));
+      s += R('ECI', v(ar.ECI));
+      s += R('XID', v(ar.XID));
+      s += R('Versione 3DS', v(ar.threeDsVersion));
+      if (v(ar.AVAlgorithm)) s += R('AV Algorithm', ar.AVAlgorithm);
+    }
+    if (td && hasVal(td)) {
+      s += `<div class="nest">Dettagli transazione</div>`;
+      s += R('Auth Method', v(td.authMethod));
+      s += R('Auth Timestamp', v(td.authTimeStamp));
+      s += R('ACS ID', v(td.acsID));
+    }
+    if (s) html += section('3D Secure', s, false);
+  }
 
-    /* ---- CLUSTER: 3D Secure (collapsible) ---- */
-    h+=`<div class="cluster">`;
-    h+=`<div class="cl-head" onclick="toggle(this)"><span class="cl-title" style="padding:0">3D Secure</span><span class="chev">▼</span></div>`;
-    h+=`<div class="cl-body">`;
-    if(p.threeDS){
-        if(p.threeDS.authenticationResult){
-            h+=`<div class="nest-label">authenticationResult</div>`;
-            const ar=p.threeDS.authenticationResult;
-            Object.keys(ar).forEach(k=>{
-                if(k==='authenticationStatus'&&v(ar[k]))h+=R(k, badge(tdsLabel(ar[k]), ar[k]==='Y'?'ok':'wait'), true);
-                else h+=R(k, v(ar[k]));
-            });
-        } else { h+=Rt('authenticationResult','null'); }
-        if(p.threeDS.transDetails){
-            h+=`<div class="nest-label">transDetails</div>`;
-            Object.keys(p.threeDS.transDetails).forEach(k=>h+=R(k, v(p.threeDS.transDetails[k])));
-        } else { h+=Rt('transDetails','null'); }
-    } else { h+=Rt('threeDS','null'); }
-    h+=`</div></div>`;
+  /* ── SECTION: EVENTI ── */
+  if (p.events && p.events.length) {
+    let s = '';
+    p.events.forEach((ev, i) => {
+      const e = ev.event;
+      const eAmt = fmtAmt(e.eventamount);
+      s += `<div class="ev-item">
+        <div class="ev-dot"></div>
+        <div class="ev-body">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="ev-type">${esc(EVT_LABEL[e.eventtype] || e.eventtype || '—')}</div>
+            ${eAmt !== null && eAmt > 0 ? `<div class="ev-amt">${curSym(p.currency)} ${eAmt.toFixed(2)}</div>` : ''}
+          </div>
+          <div class="ev-meta">${v(e.eventdate) ? esc(e.eventdate) : '—'}${v(e.eventID) ? ` · ID ${esc(e.eventID)}` : ''}${v(e.eventARN) ? ` · ARN ${esc(e.eventARN)}` : ''}</div>
+        </div>
+      </div>`;
+    });
+    html += section(`Eventi (${p.events.length})`, s, true);
+  }
 
-    /* ---- CLUSTER: Events (collapsible) ---- */
-    h+=`<div class="cluster">`;
-    h+=`<div class="cl-head" onclick="toggle(this)"><span class="cl-title" style="padding:0">Events${p.events?' ('+p.events.length+')':''}</span><span class="chev">▼</span></div>`;
-    h+=`<div class="cl-body">`;
-    if(p.events&&p.events.length){
-        p.events.forEach((ev,i)=>{
-            const e=ev.event;
-            h+=`<div class="nest-label">event[${i}]</div>`;
-            Object.keys(e).forEach(k=>h+=R(k, v(e[k])));
-        });
-    } else { h+=Rt('events','null'); }
-    h+=`</div></div>`;
+  /* ── SECTION: ACQUIRENTE ── */
+  if (p.buyer && (v(p.buyer.name) || v(p.buyer.email))) {
+    let s = Rt('Nome', v(p.buyer.name)) + Rt('Email', v(p.buyer.email));
+    if (s) html += section('Acquirente', s, false);
+  }
 
-    /* ---- CLUSTER: Buyer & Risk ---- */
-    h+=`<div class="cluster"><div class="cl-title">Buyer & Risk</div>`;
-    if(p.buyer){
-        Object.keys(p.buyer).forEach(k=>h+=Rt(k, v(p.buyer[k])));
-    } else { h+=Rt('buyer','null'); }
-    if(p.risk){
-        h+=`<div class="nest-label">risk</div>`;
-        Object.keys(p.risk).forEach(k=>h+=Rt(k, v(p.risk[k])));
-    } else { h+=Rt('risk','null'); }
-    h+=`</div>`;
+  /* ── SECTION: RISK & FRAUD ── */
+  {
+    let s = '';
+    if (p.risk && (v(p.risk.riskResponseCode) || v(p.risk.riskResponseDescription))) {
+      s += `<div class="nest">Risk</div>`;
+      s += R('Codice risk', v(p.risk.riskResponseCode));
+      s += Rt('Descrizione', v(p.risk.riskResponseDescription));
+    }
+    if (p.fraudPrevention && v(p.fraudPrevention.check) && p.fraudPrevention.check !== 'FALSE') {
+      s += `<div class="nest">Fraud Prevention</div>`;
+      s += Rt('Check', v(p.fraudPrevention.check));
+      s += Rt('Stato', v(p.fraudPrevention.state));
+      s += Rt('Descrizione', v(p.fraudPrevention.description));
+    }
+    if (s) html += section('Risk & Antifrode', s, false);
+  }
 
-    /* ---- CLUSTER: Fraud & Automation ---- */
-    h+=`<div class="cluster"><div class="cl-title">Fraud & Automation</div>`;
-    if(p.fraudPrevention){
-        h+=`<div class="nest-label">fraudPrevention</div>`;
-        Object.keys(p.fraudPrevention).forEach(k=>h+=Rt(k, v(p.fraudPrevention[k])));
-    } else { h+=Rt('fraudPrevention','null'); }
-    if(p.automaticOperation){
-        h+=`<div class="nest-label">automaticOperation</div>`;
-        const ao=p.automaticOperation;
-        h+=Rt('type', v(ao.type)?evtLabel(ao.type):null);
-        h+=Rt('date', v(ao.date));
-        h+=R('amount', v(ao.amount)?`${c} ${fmtAmt(ao.amount)?.toFixed(2)}`:null);
-    } else { h+=Rt('automaticOperation','null'); }
-    h+=`</div>`;
+  /* ── SECTION: ALERT & CUSTOM ── */
+  {
+    let s = '';
+    s += R('Alert Code', v(p.alertCode));
+    s += Rt('Alert Description', v(p.alertDescription));
+    if (p.customInfo && hasVal(p.customInfo)) s += Rt('customInfo', JSON.stringify(p.customInfo));
+    if (p.dcc && hasVal(p.dcc)) s += Rt('dcc', JSON.stringify(p.dcc));
+    if (s) html += section('Alert & Info Custom', s, false);
+  }
 
-    /* ---- CLUSTER: Other (catchall) ---- */
-    const mapped=new Set([
-        'transactionType','transactionResult','transactionState','transactionErrorCode',
-        'transactionErrorDescription','bankTransactionID','authorizationCode','paymentID',
-        'shopTransactionID','shopTransactionID_2','currency','country',
-        'paymentMethod','company','productType','maskedPAN','cvvPresent','tdLevel',
-        'token','tokenExpiryMonth','tokenExpiryYear','tokenDetails',
-        'threeDS','events','buyer','risk','fraudPrevention','automaticOperation'
+  /* ── SECTION: ALTRO (catchall) ── */
+  {
+    const mapped = new Set([
+      'transactionType','transactionResult','transactionState','transactionErrorCode','transactionErrorDescription',
+      'bankTransactionID','authorizationCode','paymentID','shopTransactionID','shopTransactionID_2',
+      'currency','country','paymentMethod','company','productType','maskedPAN','cvvPresent','tdLevel',
+      'token','tokenExpiryMonth','tokenExpiryYear','tokenDetails','threeDS','events',
+      'buyer','risk','fraudPrevention','automaticOperation','alertCode','alertDescription','customInfo','dcc'
     ]);
-    const others=Object.keys(p).filter(k=>!mapped.has(k));
-    if(others.length){
-        h+=`<div class="cluster"><div class="cl-title">Other</div>`;
-        others.forEach(k=>{
-            const val=p[k];
-            if(val!==null&&typeof val==='object'){
-                h+=Rt(k, JSON.stringify(val));
-            } else {
-                h+=Rt(k, v(val));
-            }
-        });
-        h+=`</div>`;
+    const others = Object.keys(p).filter(k => !mapped.has(k));
+    if (others.length) {
+      let s = others.map(k => {
+        const val = p[k];
+        if (!hasVal(val)) return '';
+        return typeof val === 'object' ? Rt(k, JSON.stringify(val)) : Rt(k, val);
+      }).join('');
+      if (s) html += section('Altri Campi', s, false);
     }
+  }
 
-    h+=footer('Processed by <strong>M2NDLAB</strong> via Fabrick',`<div class="sid">ShopLogin: ${SL||'—'}</div><div class="sid" style="color:var(--wait);margin-top:1px;">⚠ SANDBOX</div>`);
-    bd.innerHTML=h;
+  html += renderFooter();
+  html += '</div>';
+
+  document.getElementById('front-content').innerHTML = html;
 }
 
-/* ==== RENDER ERROR ==== */
-function renderErr(title,detail,errPayload){
-    const ban=document.getElementById('ban'), bd=document.getElementById('body');
-    ban.className='banner err';
-    ban.innerHTML=`<div class="sicon">!</div><div class="stitle">${esc(title)}</div><div class="ssub">${esc(detail||'')}</div>`;
-    let h='';
-    if(US.toUpperCase()==='XX')h+=`<div class="warn-box"><span>⚠</span><p><strong>Do not fulfill this order yet.</strong><br>URL Status is XX (suspended).</p></div>`;
+/* ─── Render Error ─── */
+function renderError(title, detail, errPayload) {
+  const cfg = getCfg('ERROR');
+  applyTheme(cfg);
+  let html = '<div class="anim-in">';
+  html += `<div class="s-hero">
+    <div class="s-ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line class="draw-x" x1="18" y1="6" x2="6" y2="18"/><line class="draw-x" x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="s-result">ERRORE</div>
+    <div class="s-title">${esc(title)}</div>
+    <div class="s-sub">${esc(detail || '')}</div>
+  </div>`;
 
-    /* Se c'è un errore applicativo Axerve, mostralo */
-    if(errPayload?.error){
-        h+=`<div class="cluster"><div class="cl-title">API Error</div>`;
-        h+=R('code', v(errPayload.error.code));
-        h+=Rt('description', v(errPayload.error.description));
-        h+=`</div>`;
-    }
+  if (errPayload?.error && errPayload.error.code !== '0') {
+    html += `<div class="err-box">
+      <div class="err-code">API Error ${esc(errPayload.error.code)}</div>
+      <div class="err-desc">${esc(errPayload.error.description || '')}</div>
+    </div>`;
+  }
 
-    h+=`<div class="cluster"><div class="cl-title">Request Info</div>`;
-    h+=R('shopLogin', SL);
-    h+=Rt('urlStatus', US);
-    h+=R('paymentID', PID);
-    h+=Rt('environment', 'Sandbox');
-    h+=`</div>`;
-    h+=footer('Could not retrieve transaction details.',`<div class="sid">ShopLogin: ${SL||'—'}</div>`);
-    bd.innerHTML=h;
+  let s = R('Shop Login', SL) + R('URL Status', US) + R('Payment ID', PID) + Rt('Ambiente', 'Sandbox');
+  html += section('Parametri Richiesta', s, true);
+  html += renderFooter();
+  html += '</div>';
+  document.getElementById('front-content').innerHTML = html;
 }
 
-function renderMissing(){
-    const ban=document.getElementById('ban'), bd=document.getElementById('body');
-    ban.className='banner err';
-    ban.innerHTML=`<div class="sicon">!</div><div class="stitle">Missing Parameters</div><div class="ssub">Required URL parameters not found</div>`;
-    bd.innerHTML=`<div style="padding:18px"><p style="font-size:12px;color:var(--t2);line-height:1.6;">This page requires URL parameters:<code style="display:block;margin-top:8px;padding:10px;background:var(--card-2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;word-break:break-all;">?a=SHOPLOGIN&Status=OK&paymentID=123&paymentToken=abc-def</code></p></div>`+footer('Processed by <strong>M2NDLAB</strong> via Fabrick','<p>Redirected here by mistake?</p>');
+/* ─── Render Missing ─── */
+function renderMissing() {
+  const cfg = getCfg('ERROR');
+  applyTheme(cfg);
+  document.getElementById('front-content').innerHTML = `<div class="anim-in">
+    <div class="s-hero">
+      <div class="s-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line class="draw-x" x1="18" y1="6" x2="6" y2="18"/><line class="draw-x" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      <div class="s-result">PARAMETRI MANCANTI</div>
+      <div class="s-title">URL Non Valida</div>
+      <div class="s-sub">I parametri richiesti non sono stati trovati nell'URL</div>
+    </div>
+    <div class="missing-wrap">
+      <p>Questa pagina richiede i seguenti parametri URL:</p>
+      <code>?a=SHOPLOGIN&Status=OK&paymentID=123456&paymentToken=xxxx-yyyy-zzzz</code>
+    </div>
+    ${renderFooter()}
+  </div>`;
 }
 
-/* ==== FETCH ==== */
-async function load(){
-    if(!PID||!PT){renderMissing();return;}
-    const ban=document.getElementById('ban');
-    ban.className='banner load';
-    ban.innerHTML=`<div class="sicon"><div class="spinner"></div></div><div class="stitle">Loading…</div><div class="ssub">Retrieving transaction</div>`;
-    document.getElementById('body').innerHTML='';
+/* ─── Fetch ─── */
+async function load() {
+  if (!PID || !PT) { renderMissing(); return; }
 
-    try{
-        const res=await fetch(`${API}/v1/payment/detail/${PID}`,{method:'GET',headers:{'Content-Type':'application/json','PaymentToken':PT}});
+  // skeleton
+  document.getElementById('front-content').innerHTML = `<div id="skel-load">
+    <div style="height:48px"></div>
+    <div class="skel skel-row" style="width:60%;margin:0 auto 8px"></div>
+    <div class="skel skel-row" style="width:40%;margin:0 auto 32px"></div>
+    <div class="skel skel-row" style="width:90%"></div>
+    <div class="skel skel-row" style="width:75%"></div>
+    <div class="skel skel-row" style="width:85%"></div>
+    <div class="skel skel-row" style="width:60%"></div>
+    <div style="height:32px"></div>
+  </div>`;
 
-        /*
-         * IMPORTANTE: anche se res.ok è false (es. 400 Bad Request),
-         * il body della risposta Axerve contiene il JSON con error.code
-         * e error.description (es. "1457 - Expired paymentToken").
-         * Quindi leggiamo SEMPRE il body prima di decidere cosa fare.
-         */
-        let data;
-        try { data=await res.json(); } catch(e) { data=null; }
-        setJson(data||{httpStatus:res.status,statusText:res.statusText});
+  try {
+    const res = await fetch(`${API_SANDBOX}/v1/payment/detail/${PID}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'PaymentToken': PT }
+    });
+    let data;
+    try { data = await res.json(); } catch(e) { data = null; }
+    setJson(data || { httpStatus: res.status, statusText: res.statusText });
 
-        if(!res.ok){
-            renderErr('API Error',`HTTP ${res.status} — ${res.statusText}`,data);
-            return;
-        }
-        if(data.error&&data.error.code!=='0'){
-            renderErr('Transaction Error',`[${data.error.code}] ${data.error.description}`,data);
-            return;
-        }
-        if(!data.payload){renderErr('Unexpected Response','No payload in API response',data);return;}
-        renderCard(data.payload);
-    }catch(err){
-        setJson({error:err.message});
-        renderErr('Connection Error',`Unable to reach gateway. ${err.message||''}`,null);
+    if (!res.ok) { renderError(`HTTP ${res.status}`, res.statusText, data); return; }
+    if (data?.error?.code && data.error.code !== '0') {
+      renderError('Errore API', `[${data.error.code}] ${data.error.description}`, data); return;
     }
+    if (!data?.payload) { renderError('Risposta Inattesa', 'Nessun payload nella risposta API', data); return; }
+
+    renderCard(data.payload);
+  } catch(err) {
+    setJson({ error: err.message });
+    renderError('Errore di Connessione', `Impossibile raggiungere il gateway. ${err.message || ''}`, null);
+  }
 }
 
 load();
